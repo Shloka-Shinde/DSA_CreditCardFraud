@@ -28,9 +28,9 @@ int main() {
 		while((ch = getchar()) != '\n') {
 			num[i++] = ch;
 		}
+		
 		num[i] = '\0';
 		i = 0;
-		
 		
 		no = strtol(num, &endptr, 16);
 		 

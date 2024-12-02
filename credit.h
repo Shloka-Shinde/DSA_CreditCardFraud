@@ -193,6 +193,8 @@ int compareDate(date d1, date d2);
 
 void find_transactions_by_date(transaction *root, date target_date);
 
+void find_transactions_byLocation(dll list, location place);
+
 int is_small_time_frame(struct tm last_time, struct tm current_time); 
 
 int frequent_trans(node *temp); 

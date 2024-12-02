@@ -175,36 +175,37 @@ char *checkPass(char *input) {
     return line; // Remember to free this memory after use in checkUser
 }
 
-
 int checkUser(Map *map, long int no, char *pass) {
-    int idx = hashfunction(no);
     
-    if (map->array[idx] == NULL) {
-        return -1;  // Return -1 indicating "user not found"
-    }
-
-    item *temp = map->array[idx];
-
-    while (temp != NULL) {
+    int idx = hashfunction(no);
+    int i = 0;
+    while(i < MAPSIZE) {
     	
-        if (temp->client.cardNo == no) {
-            // Transform the input password
-            char *new = checkPass(pass);
-
-            // Compare the transformed password
-            if (strcmp(new, temp->client.password) == 0) {
-                free(new);  // Free the allocated memory for transformed password
-                return 1; 
-                 // Password matched
-            } 
-            
-            else {
-                free(new);  // Free the allocated memory for transformed password
-                return 0;  // Incorrect password
-            }
+    	unsigned int probeIndex = (idx + i * i) % map->size;
+    	
+    	if (map->array[probeIndex] == NULL) {
+            break;  // User not found
         }
-
-        temp = temp->next;
+	
+	item *currentItem = map->array[probeIndex];
+	if(currentItem->client.cardNo == no) {
+		
+		char *new = checkPass(pass);
+		// Compare the transformed password
+            	if (strcmp(new, currentItem->client.password) == 0) {
+                	free(new);  // Free the allocated memory for transformed password
+                	return 1; 
+                	 // Password matched
+            	} 
+            	
+            	else {
+                	free(new);  // Free the allocated memory for transformed password
+                	return 0;  // Incorrect password
+            	}
+	}
+	
+	
+	i++;
     }
 
     return -1;  // Return -1 indicating "user not found"
@@ -256,7 +257,7 @@ void readCsv(dll *list, FILE **fp) {
 	
 		line = getLine(fp);
 		
-		if(strcmp(line, "") == 0) {
+		if(strcmp(line, "") == 0 || line == NULL) {
 			break;
 		}
 		
@@ -288,7 +289,7 @@ void readCsv(dll *list, FILE **fp) {
 		//country 
 		token = strtok(NULL, ",");
 		strncpy(payment_place.country, token, sizeof(payment_place.country) - 1);
-		payment_place.state[sizeof(payment_place.country) - 1] = '\0'; // Ensure null-termination
+		payment_place.country[sizeof(payment_place.country) - 1] = '\0'; // Ensure null-termination
 		
 		token = strtok(NULL, ",");
         	int zip_code = atoi(token);
@@ -303,7 +304,11 @@ void readCsv(dll *list, FILE **fp) {
         	
         	node* newNode = createNode(transaction_id, payment_date, payment_time, payment_place, zip_code, amount, status);
         	insertEnd(list, newNode);
+        	
+        	free(line);
 	}
+	
+	free(line);
 }
 
 /* Temporaryfunction only for purpose of testing  : */
@@ -312,7 +317,8 @@ void display(dll list) {
 	
 	node *temp = list.head;
 	while(temp != NULL) {
-		printf(" %f \n", temp->amount);
+		printf("\n %f ", temp->amount);
+		printf(" date: %d %d %d \n", temp->date_of_payment.day, temp->date_of_payment.month, temp->date_of_payment.year);
 		temp = temp->next;
 	}	
 }
@@ -332,10 +338,10 @@ node *copyList(dll list) {
 		new->zipCode[0] = temp->zipCode[0];
 		new->amount = temp->amount;
 		new->status = temp->status;
+		new->date_of_payment = temp->date_of_payment;
 		
 		p->next = new;
 		p = p->next;
-		
 		temp = temp->next;
 	} 
 	
@@ -479,7 +485,22 @@ int getInput(int num, dll list, item *endUser) {
 			date target;
 			scanf("%d %d %d", &(target.day), &(target.month), &(target.year));
 			find_transactions_by_date(endUser->root, target);
+			break;
+		}
+		
+		case 5 : {
+	
+			printf("\n Enter the location as City State Country (separated by spaces) \n");
+			location place;
+			scanf("%s %s %s", place.city, place.state, place.country);
+			find_transactions_byLocation(list, place);
+			break;
+		}
+		
+		case 6 : {
 			
+			printf("\n The mean transaction Amount : %f \n", endUser->mean);
+			printf("The Standard Deviation : %f \n", endUser->stdDev);
 			break;
 		}
 		
@@ -599,6 +620,8 @@ void find_transactions_by_date(transaction *root, date target_date) {
   
     else if(compareDate(target_date, root->date_of_payment) == 0){
         
+        find_transactions_by_date(root->left, target_date);
+        
         printf("Transaction : \n");
 	printf("%d/%d/%d at %s at %d:%d:%d \n", root->date_of_payment.day, root->date_of_payment.month, root->date_of_payment.year, root->payment_place.city, root->time_of_payment.tm_hour, root->time_of_payment.tm_min, root->time_of_payment.tm_sec );
         
@@ -610,9 +633,38 @@ void find_transactions_by_date(transaction *root, date target_date) {
 	else 
 		printf(" Status : Failed\n");
         
+        
+        find_transactions_by_date(root->right, target_date);
+        
     }
     
     return;
+}
+
+void find_transactions_byLocation(dll list, location place) {
+	
+	node *temp = list.head;
+	
+	while(temp != NULL) {
+		
+		if(strcmp(temp->payment_place.country, place.country) == 0  && strcmp(temp->payment_place.state, place.state) == 0 && strcmp(temp->payment_place.city, place.city) == 0)  {
+		
+			
+			printf("Transaction : \n");
+			printf("%d/%d/%d at %s at %d:%d:%d \n", temp->date_of_payment.day, temp->date_of_payment.month, temp->date_of_payment.year, temp->payment_place.city, temp->time_of_payment.tm_hour, temp->time_of_payment.tm_min, temp->time_of_payment.tm_sec );
+			
+			printf("Amount %f \n", temp->amount);
+		     	
+			if(temp->status == 'S' || temp->status == 's') 
+				printf(" Status : Successful \n");
+					
+			else 
+				printf(" Status : Failed\n");
+		}
+		
+		
+		temp = temp->next;
+	}
 }
 
 /* Here 1 means true;
