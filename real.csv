@@ -1,0 +1,17 @@
+transaction_id,date_of_payment,time_of_payment,city,state,country,zipCode,amount (INR),status
+001,01-10-2024,08:32:15,Mumbai,Maharashtra,India,400001,10000,successful
+002,02-10-2024,13:45:32,Mumbai,Maharashtra,India,400001,2000,successful
+003,02-10-2024,17:03:48,Mumbai,Maharashtra,India,400001,1500,failed
+004,03-10-2024,10:10:55,Mumbai,Maharashtra,India,400001,5000,successful
+005,04-10-2024,14:21:02,Mumbai,Maharashtra,India,400001,12000,successful
+006,05-10-2024,19:34:07,Mumbai,Maharashtra,India,400001,7000,successful
+007,06-10-2024,21:12:30,Mumbai,Maharashtra,India,400001,3500,failed
+008,07-10-2024,09:15:44,Mumbai,Maharashtra,India,400001,9000,successful
+009,07-10-2024,12:30:55,Mumbai,Maharashtra,India,400001,5500,successful
+010,08-10-2024,16:22:10,Mumbai,Maharashtra,India,400001,20000,successful
+011,09-10-2024,11:56:33,Mumbai,Maharashtra,India,400001,3000,successful
+012,09-10-2024,17:01:40,Mumbai,Maharashtra,India,400001,4000,failed
+013,10-10-2024,14:10:29,Mumbai,Maharashtra,India,400001,50000,successful
+014,11-10-2024,20:18:58,Mumbai,Maharashtra,India,400001,2500,successful
+015,12-10-2024,09:43:12,Mumbai,Maharashtra,India,400001,1000,successful
+016,13-10-2024,18:25:20,Mumbai,Maharashtra,India,400001,16000,successful
