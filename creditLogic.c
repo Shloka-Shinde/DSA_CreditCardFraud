@@ -4,6 +4,7 @@
 #include"credit.h"
 #include <string.h>
 #include<math.h>
+#include <SDL2/SDL.h>
 
 char *getLine(FILE **fp) {
 	
@@ -501,6 +502,10 @@ int getInput(int num, dll list, item *endUser) {
 			
 			printf("\n The mean transaction Amount : %f \n", endUser->mean);
 			printf("The Standard Deviation : %f \n", endUser->stdDev);
+			
+			display_graph(endUser);
+			
+			
 			break;
 		}
 		
@@ -519,6 +524,103 @@ int getInput(int num, dll list, item *endUser) {
 	}
 	
 	return 1;
+}
+
+void drawLineGraph(SDL_Renderer *renderer, dll list) {
+    
+    if (list.head == NULL) {
+        return; // No data to display
+    }
+    
+    // Calculate min and max values of the amount to scale them appropriately
+    float minAmount = list.head->amount;
+    float maxAmount = list.head->amount;
+    node* temp = list.head;
+    
+    while (temp != NULL) {
+        if (temp->amount < minAmount) minAmount = temp->amount;
+        if (temp->amount > maxAmount) maxAmount = temp->amount;
+        temp = temp->next;
+    }
+    
+    // Scaling factors
+    float yScale = (maxAmount - minAmount) > 0 ? HEIGHT / (maxAmount - minAmount) : 1;
+    int prevX = 50, prevY = HEIGHT - (list.head->amount - minAmount) * yScale;  // Starting point
+
+    temp = list.head;   
+    int count = 1;  // Start from 1, adjusting for proper X spacing
+
+    while (temp != NULL) {
+        // Map the amount to a Y coordinate (invert Y-axis for SDL)
+        int currX = 50 + count * 50; // Adjust X spacing (increase/decrease if needed)
+        int currY = HEIGHT - temp->amount;  // Map the amount to screen space (invert Y)
+
+        // Ensure the current Y is within the height bounds
+        if (currY > HEIGHT) currY = HEIGHT;
+        if (currY < 0) currY = 0;
+
+        // Draw a line between the previous and current point
+        SDL_SetRenderDrawColor(renderer, 0, 128, 255, 255);  // Blue color for the curve
+        SDL_RenderDrawLine(renderer, prevX, prevY, currX, currY);
+
+        // Set previous coordinates for the next iteration
+        prevX = currX;
+        prevY = currY;
+
+        count++;
+        temp = temp->next;
+    }
+}
+
+// Function to draw axis
+void drawAxis(SDL_Renderer *renderer) {
+   
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // Black color
+
+    // Draw X axis
+    SDL_RenderDrawLine(renderer, 50, HEIGHT - 50, WIDTH - 50, HEIGHT - 50);
+    // Draw Y axis
+    SDL_RenderDrawLine(renderer, 50, HEIGHT - 50, 50, 50);
+}
+
+void display_graph(item *endUser) {
+
+    // Initialize SDL
+    SDL_Init(SDL_INIT_VIDEO);
+
+    // Create the window and renderer
+    SDL_Window *window = SDL_CreateWindow("Transaction Line Graph", 
+                                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+                                          WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    int running = 1;
+    SDL_Event event;
+
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = 0;
+            }
+        }
+
+        // Clear the renderer and set the background color
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);  // White background
+        SDL_RenderClear(renderer);
+
+        // Draw the axis and the line graph
+        drawAxis(renderer);
+        drawLineGraph(renderer, endUser->list);  // Draw the line graph
+
+        // Present the rendered content
+        SDL_RenderPresent(renderer);
+    }
+
+    // Cleanup
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
 }
 
 void printRecent(dll list) {
@@ -691,7 +793,6 @@ int multiple_failed_transactions(node *temp) {
 	
 	return (count >= 3 ? 1 : 0);
 }
-
 
 int is_small_time_frame(struct tm last_time, struct tm current_time) {
 
@@ -1085,7 +1186,6 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	
 	float x1, x2, x3, x4;
 	float x1_f, x2_f, x3_f, x4_f;
-	
 	
 	// x1;
 	if(zscore == 1) {

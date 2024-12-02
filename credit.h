@@ -14,6 +14,8 @@
 #define YELLOW "\033[33m"
 #define CYAN "\033[36m"
 #define epsilon 1e-6
+#define WIDTH 800
+#define HEIGHT 600
 
 typedef struct countLoc{
 	int fin;
@@ -208,3 +210,5 @@ char timeOfDay(struct tm t);
 void TrainModel(item *endUser, char *country, struct tm t, float at, char status);
 
 void detectFraud(item *endUser);
+
+void display_graph(item *endUser);
