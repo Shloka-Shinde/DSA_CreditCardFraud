@@ -913,7 +913,6 @@ void fraudAlert(dll list, item *endUser) {
 char timeOfDay(struct tm t) {
 	
 	char d;
-	
 	if(t.tm_hour >= 6 && t.tm_hour <= 11) {
 		d = 'm';
 	}
@@ -931,8 +930,8 @@ char timeOfDay(struct tm t) {
 
 int *flag(item *endUser) {
 	
-	/*This traverses through the list and identifies and flags the transactions as fraud or non fraud. 
-	*/
+	/*This traverses through the list and identifies and flags the transactions as fraud or non fraud.*/
+	
 	node *temp = endUser->list.head;
 	int *freq = (int*)malloc(sizeof(int)*2);
 	int count = 0;
