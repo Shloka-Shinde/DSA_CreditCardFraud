@@ -1,3 +1,6 @@
 amount location time(hh:mm:ss) status
-140000 India 12:32:00 Successful
-
+14000 India 12:32:00 Successful
+254 India 13:01:45 failed
+16743 India 21:43:11 Successful
+8693.965 Usa 20:12:12 Successful 
+100 India 23:23:23 Successful 

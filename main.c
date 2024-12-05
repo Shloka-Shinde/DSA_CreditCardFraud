@@ -55,7 +55,7 @@ int main() {
 		    
 		    //strcat(fileName, ".csv");
 		    
-		    fp = fopen("new_user.csv", "r");
+		    fp = fopen("female_urban.csv", "r");
 		    
 		    if(fp == NULL) {
 		    	printf(RED "There was some error in loading the data \n");
@@ -90,7 +90,17 @@ int main() {
 		    	t.tm_min = 13;
 		    	t.tm_sec = 1;
 		    	
-		    	TrainModel(endUser, "India", t, 24000, 's');
+		    	TrainModel(endUser, "India", t, 40000, 's');
+		    	TrainModel(endUser, "India", t, 130300, 'f');
+		    	TrainModel(endUser, "Usa", t, 800, 's');
+		    	TrainModel(endUser, "India", t, 7857, 's');
+		    	
+		    	t.tm_hour = 23;
+		    	t.tm_min = 23;
+		    	t.tm_sec = 23;
+		    	
+		    	
+		    	TrainModel(endUser, "India", t, 34000, 's');
 		   	//detectFraud(endUser);
 		   }
 		

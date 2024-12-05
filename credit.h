@@ -13,9 +13,11 @@
 #define GREEN "\033[32m"
 #define YELLOW "\033[33m"
 #define CYAN "\033[36m"
-#define epsilon 1e-6
 #define WIDTH 800
 #define HEIGHT 600
+#define epsilon 1e-6
+
+#define Gauss_constant 0.3990
 
 typedef struct countLoc{
 	int fin;
@@ -212,3 +214,21 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 void detectFraud(item *endUser);
 
 void display_graph(item *endUser);
+
+void countAmtUpdate(countAmt *amt_cat, float z, int isFraud);
+
+void countLocUpdate(countLoc *loc_cat, char locFlag, int isFraud);
+
+void countTimeUpdate(countTime *time_cat, char timeFlag, int isFraud);
+
+void countStatusUpdate(countStatus *st_cat, char status, int isFraud);
+
+void processTransaction(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *time_cat, countStatus *st_cat);
+
+float computeProbability(countAmt amt_cat, countLoc loc_cat, countTime time_cat, countStatus st_cat, float z, char locFlag, char timeFlag, char status);
+
+void FindFrequency(item *endUser, countTime *time, countAmt* amt, countStatus *st_cat);
+
+float MeanAmt(node *head);
+
+float dev(node *head, float mean);

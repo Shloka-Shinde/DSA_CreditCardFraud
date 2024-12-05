@@ -230,6 +230,7 @@ node* createNode(int transaction_id, date payment_date, struct tm payment_time, 
     newNode->status = status;
     newNode->prev = NULL;
     newNode->next = NULL;
+    newNode->fraud = 0;
     
     return newNode;
 }
@@ -457,7 +458,7 @@ void printMenu() {
 	printf(CYAN"4. Transactions done on particular date \n");
 	printf(CYAN"5. Transaction done on particular location \n");
 	printf(CYAN"6. Statistics and Insights \n");
-	printf(CYAN"7. Search for any potential risks/ fraud alerts\n");
+	printf(CYAN"7. Show flagged transactions \n");
 	printf(CYAN"8. Exit Program \n");
 }
 
@@ -504,7 +505,6 @@ int getInput(int num, dll list, item *endUser) {
 			printf("The Standard Deviation : %f \n", endUser->stdDev);
 			
 			display_graph(endUser);
-			
 			
 			break;
 		}
@@ -576,7 +576,6 @@ void drawLineGraph(SDL_Renderer *renderer, dll list) {
 void drawAxis(SDL_Renderer *renderer) {
    
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // Black color
-
     // Draw X axis
     SDL_RenderDrawLine(renderer, 50, HEIGHT - 50, WIDTH - 50, HEIGHT - 50);
     // Draw Y axis
@@ -593,7 +592,7 @@ void display_graph(item *endUser) {
                                           SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
                                           WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-
+    
     int running = 1;
     SDL_Event event;
 
@@ -795,8 +794,30 @@ int multiple_failed_transactions(node *temp) {
 }
 
 int is_small_time_frame(struct tm last_time, struct tm current_time) {
+    // Zero out the struct to ensure all fields are initialized
+    last_time.tm_isdst = -1;  // Let mktime handle DST
+    current_time.tm_isdst = -1;
 
-    double seconds_diff = difftime(mktime(&current_time), mktime(&last_time));
+    // Initialize all other fields to zero
+    last_time.tm_mday = 1;   // Set a default day (valid day in tm structure)
+    last_time.tm_mon = 0;     // Set to January (valid month)
+    last_time.tm_year = 100;  // Set a default year (valid)
+
+    current_time.tm_mday = 1;   // Set a default day (valid day in tm structure)
+    current_time.tm_mon = 0;     // Set to January (valid month)
+    current_time.tm_year = 100;  // Set a default year (valid)
+
+    // Ensure tm structures are valid before using mktime
+    time_t last_time_t = mktime(&last_time);
+    time_t current_time_t = mktime(&current_time);
+
+    // Check if mktime failed
+    if (last_time_t == (time_t) -1 || current_time_t == (time_t) -1) {
+        fprintf(stderr, "Error: mktime failed\n");
+        return 0;  // Return some default value if mktime fails
+    }
+
+    double seconds_diff = difftime(current_time_t, last_time_t);
     
     return seconds_diff < 300; // Check if the difference is less than 5 minutes
 }
@@ -930,8 +951,6 @@ char timeOfDay(struct tm t) {
 
 int *flag(item *endUser) {
 	
-	/*This traverses through the list and identifies and flags the transactions as fraud or non fraud.*/
-	
 	node *temp = endUser->list.head;
 	int *freq = (int*)malloc(sizeof(int)*2);
 	int count = 0;
@@ -1009,22 +1028,25 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 		if(temp->fraud == 1) {
 			
 			// x1
-			if(fabs(z) <= 1) {
+			if(fabs(z) <= 1.5) {
 				amt_cat->z1f += 1;
 				amt_cat->total_f += 1;
 				amt_cat->total += 1;
+				
 			}
 			
-			else if(fabs(z) <= 2) {
+			else if(fabs(z) <= 3) {
 				amt_cat->z2f += 1;
 				amt_cat->total_f += 1;
 				amt_cat->total += 1;
+				
 			}
 			
 			else {
 				amt_cat->z3f += 1;
 				amt_cat->total_f += 1;
 				amt_cat->total += 1;
+				
 			}
 			
 			//x2;
@@ -1032,12 +1054,14 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 				loc_cat->fin += 1;
 				loc_cat->total_f += 1;
 				loc_cat->total += 1;
+				
 			}
 			
 			else {
 				loc_cat->fout += 1;
 				loc_cat->total_f += 1;
 				loc_cat->total += 1;
+				
 			}
 			
 			//x3 
@@ -1045,18 +1069,21 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 				time_cat->odf += 1;
 				time_cat->total_f += 1;
 				time_cat->total += 1;
+				
 			}
 			
 			else if(tim == 'd') {
 				time_cat->df += 1;
 				time_cat->total_f += 1;
 				time_cat->total += 1;
+				
 			}
 			
 			else {
 				time_cat->nf += 1;
 				time_cat->total_f += 1;
 				time_cat->total += 1;
+				
 			}
 			
 			//x4;
@@ -1064,12 +1091,14 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 				st_cat->ff += 1;
 				st_cat->total_f += 1;
 				st_cat->total += 1;
+				
 			}
 			
 			else {
 				st_cat->sf += 1;
 				st_cat->total_f += 1;
 				st_cat->total += 1;
+				
 			}
 		}
 		
@@ -1077,12 +1106,12 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 		else {
 			
 			// x1
-			if(fabs(z) <= 1) {
+			if(fabs(z) <= 1.5) {
 				amt_cat->z1 += 1;
 				amt_cat->total += 1;
 			}
 			
-			else if(fabs(z) <= 2) {
+			else if(fabs(z) <= 3) {
 				amt_cat->z2 += 1;
 				amt_cat->total += 1;
 			}
@@ -1134,21 +1163,22 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 	
 		temp = temp->next;
 	}
+	
 }
 
 void TrainModel(item *endUser, char *country, struct tm t, float at, char status) {
 
 	int *counts = flag(endUser);
-	float y = (float)counts[1] / counts[0]; // Cast counts[1] to float before division
+	float y = (float)counts[1]/counts[0]; // Cast counts[1] to float before division
 	float zscore = (at - endUser->mean)/(endUser->stdDev);
 	char c;
 	char tim;
 	
 	// x1
-	if(fabs(zscore) <= 1) {
+	if(fabs(zscore) <= 1.5) {
 		zscore = 1;	
 	}
-	else if(fabs(zscore) <= 2) {
+	else if(fabs(zscore) <= 3) {
 		zscore = 2;
 	}
 	else {
@@ -1159,7 +1189,6 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	if(strcmp(country, "India") == 0) {
 		c = 'i';
 	}
-	
 	else {
 		c = 'n';
 	}
@@ -1171,7 +1200,6 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	else if(t.tm_hour > 6 && t.tm_hour < 16) {
 		tim = 'd';
 	}
-	
 	else {
 		tim = 'n';
 	}
@@ -1187,26 +1215,26 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	float x1_f, x2_f, x3_f, x4_f;
 	
 	// x1;
+	
 	if(zscore == 1) {
+	
 		x1_f = (float)amt_cat.z1f/amt_cat.total_f;
 		
 		if(x1_f == 0) {
-			x1_f = (float)(amt_cat.z1f + 1)/(amt_cat.total_f + 3);
+			
+ 			x1_f = (float)(amt_cat.z1f + 1)/(amt_cat.total_f + 3);
 		}
 		
-		else if(x1_f == 1) {
+		if(x1_f >= 1) {
 			x1_f = (float)(1 - epsilon);
 		}	
 		
 		x1 = (float)(amt_cat.z1f + amt_cat.z1)/amt_cat.total;
 		
-		if(x1 == 0) {
+		if(x1 == 0) {	
 			x1 = (float)(amt_cat.z1f + amt_cat.z1 + 1)/(amt_cat.total + 3);
 		}
-		
-		else if(x1 == 1) {
-			x1 = (float)(1 - epsilon);
-		}
+
 	}
 	
 	else if(zscore == 2) {
@@ -1217,7 +1245,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x1_f = (float)(amt_cat.z2f + 1)/(amt_cat.total_f + 3);
 		}
 		
-		else if(x1_f == 1) {
+		if(x1_f >= 1) {
 			x1_f = (float)(1 - epsilon);
 		}
 		
@@ -1227,9 +1255,6 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x1 = (float)(amt_cat.z2f + amt_cat.z2 + 1)/(amt_cat.total + 3);
 		}
 		
-		else if(x1 == 1) {
-			x1 = (float)(1 - epsilon);
-		}
 	}
 	
 	else {
@@ -1239,19 +1264,18 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x1_f = (float)(amt_cat.z3f + 1)/(amt_cat.total_f + 3);
 		}
 		
-		else if(x1_f == 1) {
+		if(x1_f >= 1) {
+			
 			x1_f = (float)(1 - epsilon);
 		}
 		
 		x1 = (float)(amt_cat.z3f + amt_cat.z3)/amt_cat.total;
 		
 		if(x1 == 0.00) {
+			
 			x1 = (float)(amt_cat.z3f + amt_cat.z3 + 1)/(amt_cat.total + 3);
 		}
 		
-		else if(x1 == 1) {
-			x1 = (float)(1 - epsilon);
-		}
 	}
 	
 	//x2: 
@@ -1262,18 +1286,14 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x2_f = (float)(loc_cat.fin + 1)/(loc_cat.total_f + 2);
 		}
 		
-		else if(x2_f == 1) {
+		if(x2_f >= 1) {
 			x2_f = (float)(1 - epsilon);
 		}
 		
-		x2 = (float)(loc_cat.fin + loc_cat.in)/amt_cat.total;
+		x2 = (float)(loc_cat.fin + loc_cat.in)/counts[0];
 		
 		if(x2 == 0) {
-			x2 = (float)(loc_cat.fin + loc_cat.in + 1)/(amt_cat.total + 2);
-		}
-		
-		else if(x2 == 1) {
-			x2 = (float)(1 - epsilon);
+			x2 = (float)(loc_cat.fin + loc_cat.in + 1)/(loc_cat.total_f + 2);
 		}
 	}
 	
@@ -1284,19 +1304,17 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x2_f = (float)(loc_cat.fout + 1)/(loc_cat.total_f + 2);
 		}	
 		
-		else if(x2_f == 1) {
+		if(x2_f >= 1) {
+			
 			x2_f = (float)(1 - epsilon);
 		}
 		
-		x2 = (float)(loc_cat.fout + loc_cat.out)/amt_cat.total;
+		x2 = (float)(loc_cat.fout + loc_cat.out)/loc_cat.total;
 		
 		if(x2 == 0) {
-			x2 = (float)(loc_cat.fout + loc_cat.out + 1)/(amt_cat.total + 2);
+			x2 = (float)(loc_cat.fout + loc_cat.out + 1)/(loc_cat.total + 2);
 		}
-		
-		else if(x2 == 1) {
-			x2 = (float)(1 - epsilon);
-		}	
+			
 	}
 	
 	//x3 
@@ -1307,7 +1325,8 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x3_f = (float)(time_cat.odf + 1)/(time_cat.total_f + 3);
 		}
 		
-		else if(x3_f == 1) {
+		if(x3_f >= 1) {
+			
 			x3_f = (float)(1 - epsilon);
 		}
 		
@@ -1316,9 +1335,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		if(x3 == 0) {
 			x3 = (float)(time_cat.odf + time_cat.od + 1)/(time_cat.total + 3);
 		}
-		else if(x3 == 1) {
-			x3 = (float)(1 - epsilon);
-		}	
+			
 	}
 	
 	else if(tim == 'd') {
@@ -1328,7 +1345,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x3_f = (float)(time_cat.df + 1)/(time_cat.total_f + 3);
 		}
 		
-		else if(x3_f == 1) {
+		if(x3_f >= 1) {
 			x3_f = (float)(1 - epsilon);
 		}
 		
@@ -1337,9 +1354,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		if(x3 == 0) {
 			x3 = (float)(time_cat.df + time_cat.d + 1)/(time_cat.total + 3);
 		}
-		else if(x3 == 1) {
-			x3 = (float)(1 - epsilon);
-		}
+		
 	}
 	
 	else {
@@ -1349,7 +1364,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x3_f = (float)(time_cat.nf + 1)/(time_cat.total_f + 3);
 		}
 		
-		else if(x3_f == 1) {
+		if(x3_f >= 1) {
 			x3_f = (float)(1 - epsilon);
 		}
 		
@@ -1359,20 +1374,17 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x3 = (float)(time_cat.nf + time_cat.n + 1)/(time_cat.total + 3);
 		}
 		
-		else if(x3 == 1) {
-			x3 = (float)(1 - epsilon);
-		}
 	}
 	
 	//x4 
 	if(status == 's' || status == 'S') {
-		x4_f = st_cat.sf/st_cat.total_f;
+		x4_f = (float)st_cat.sf/st_cat.total_f;
 		
 		if(x4_f == 0) {
 			x4_f = (float)(st_cat.sf + 1)/(st_cat.total_f + 2);
 		}
 		
-		else if(x4_f == 1) {
+		if(x4_f >= 1) {
 			x4_f = (float)(1 - epsilon);
 		}
 		
@@ -1381,10 +1393,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		if(x4 == 0) {
 			x4 = (float)(st_cat.sf + st_cat.s + 1)/(st_cat.total + 2);
 		}
-		
-		else if(x4 == 1) {
-			x4 = (float)(1 - epsilon);
-		}	
+			
 	}
 	
 	else {
@@ -1394,26 +1403,269 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 			x4_f = (float)(st_cat.ff + 1)/(st_cat.total_f + 2);
 		}
 		
-		else if(x4_f == 1) {
+		if(x4_f >= 1) {
 			x4_f = (float)(1 - epsilon);
 		}	
 		
-		x4 = (float)(st_cat.ff + st_cat.f)/ st_cat.total; 
+		x4 = (float)(st_cat.ff + st_cat.f)/st_cat.total; 
 		
 		if(x4 == 0) {
 			x4 = (float)(st_cat.ff + st_cat.f + 1)/(st_cat.total + 2); 
 		}
-		
-		else if(x4 == 1) {
-			x4 = (float)(1 - epsilon);
-		}
 	}
-	 
-	float p = y *(x4_f * x3_f * x2_f * x1_f)/(x1 * x2 * x3 * x4); 	
-	printf(" %f ", p);
+	
+	/*float p1_f =  -0.9189 - (float)log(std) - (float)(((float)(at - mn) * (float)(at - mn))/(2 * std * std));
+	printf(" %f \n", p1_f);*/
+	
+	float p = (float)y * (x4_f * x3_f * x1_f * x2_f)/(x1 * x2 * x3 * x4);
+	
+	printf(YELLOW"\n---------------------------------------\n");
+	
+	if(p >= 1) {
+		printf(RED"\n Alert : High Risk Transaction Detected  \n");
+		return;
+	}
+	
+	printf(YELLOW"\n %f %f %f %f \n", x1_f, x2_f, x3_f, x4_f);
+	printf(YELLOW" %f ", p);
 	
 	return;
 }
+
+float MeanAmt(node *head) {
+	
+	node *temp = head;
+	float mean = 0;
+	int count = 0;
+	
+	while(temp != NULL) {
+		
+		if(temp->fraud == 1) {
+			mean += temp->amount;
+			count++;
+		}
+		
+		temp = temp->next;
+	}
+	
+	mean = mean/(float)count;
+	return mean;
+}
+
+float dev(node *head, float mean) {
+	
+	node *temp = head;
+	float sum = 0;
+	int count = 0;
+	
+	while(temp != NULL) {
+		if(temp->fraud == 1) {
+			float diff = temp->amount - mean;
+			sum += (diff*diff);
+			count++;
+		}
+		
+		temp = temp->next;
+	}
+	
+	sum = sum/(float)count;
+	
+	return sum;
+}
+
+/*
+void FindFrequency(item *endUser, countTime *time, countAmt* amt, countStatus *st_cat) {
+	
+	node *temp = endUser->list.head;
+	long seconds = 0;
+	
+	while(temp != NULL) {
+		
+		if(temp->fraud == 1) {
+			
+			amt->mean += temp->amount;
+			amt->total_f += 1;
+			
+			seconds += (temp->time_of_payment.tm_hour * 3600) + (temp->time_of_payment.tm_min * 60) + (temp->time_of_payment.tm_sec);
+			
+			time->total_f += 1;	
+			
+			if(temp->status == 'f' || temp->status == 'F') {
+				st_cat->ff += 1;
+				st_cat->total_f += 1;
+				st_cat->total += 1;
+				
+			}
+			
+			else {
+				st_cat->sf += 1;
+				st_cat->total_f += 1;
+				st_cat->total += 1;
+			}
+		}
+		
+		else {
+		
+			if(temp->status == 'f' || temp->status == 'F') {
+				st_cat->f += 1;
+				st_cat->total += 1;
+			}
+			
+			else {
+				st_cat->s += 1;
+				st_cat->total += 1;
+			}
+		}
+		
+		temp = temp->next;
+	}
+	
+	amt->mean = (float)amt->mean/amt->total_f;
+	time->mean = (float)seconds/time->total_f;	
+} 
+
+void Calculate_stdDev(item *endUser, countAmt *amount, countTime *time) {
+    
+    float meanAmt = amount->mean;
+    float meanTime = time->mean;
+    
+    node *temp = endUser->list.head;
+    float sum = 0.0;
+    long tim = 0;
+    
+    while(temp != NULL) {
+        
+        if(temp->fraud == 1) {
+        	
+        	float diff = temp->amount - meanAmt;
+		sum += (diff *diff);
+		
+	       	long sec = (temp->time_of_payment.tm_hour * 3600) + (temp->time_of_payment.tm_min * 60) + (temp->time_of_payment.tm_sec);
+	      	sec = sec - meanTime;
+	      	tim += (sec*sec);
+        }
+      	
+        temp = temp->next;
+    }
+    
+    sum = (sqrt)(sum / (float)amount->total_f);
+    tim = (sqrt)(tim / (float)time->total_f);
+    
+    amount->stdDev = sum;
+    time->stdDev = tim;
+}
+
+float meanTime(node *head) {
+	
+	node *temp = head;
+	long sec = 0;
+	int count = 0;
+	float mean;
+	while(temp != NULL) {
+		sec += (temp->time_of_payment.tm_hour * 3600) + (temp->time_of_payment.tm_min * 60) + (temp->time_of_payment.tm_sec);
+		count++;
+		temp = temp->next;
+	}	
+	
+	mean = (float)sec/(float)count;
+	return mean;
+}
+
+float stdDev_time(node *head, float mean) {
+	
+	node *temp = head;
+	long tim = 0;
+	
+	int count = 0;
+	
+	while(temp != NULL) {
+		
+		long sec = (temp->time_of_payment.tm_hour * 3600) + (temp->time_of_payment.tm_min * 60) + (temp->time_of_payment.tm_sec);
+	      	sec = sec - mean;
+	      	tim += (sec*sec);
+		temp = temp->next;
+		count++;
+	}
+	
+	float dev = (float)tim/count;	
+	return dev;
+}
+
+void TrainModel(item *endUser, char *country, struct tm t, float at, char status) {
+	
+	int *counts = flag(endUser);
+	float y = (float)counts[1]/counts[0]; 
+	
+	countTime time_cat = {0.0, 0.0, 0};
+	countAmt amt_cat = {0.0, 0.0, 0};
+	countStatus st_cat = {0,0,0,0,0,0};
+	
+	float x1,x2, x3;
+	float x1_f, x2_f, x3_f;
+
+	FindFrequency(endUser, &time_cat, &amt_cat, &st_cat);
+	//printf(" %f %f \n", time_cat.mean, amt_cat.mean);
+	
+	Calculate_stdDev(endUser, &amt_cat, &time_cat);
+	
+	//printf(" %f %f \n", amt_cat.stdDev, time_cat.stdDev);
+	x3_f = (float)st_cat.ff/st_cat.total_f;
+		
+	if(x3_f == 0) {
+		x3_f = (float)(st_cat.ff + 1)/(st_cat.total_f + 2);
+	}
+		
+	if(x3_f >= 1) {
+		x3_f = (float)(1 - epsilon);
+	}	
+		
+	x3 = (float)(st_cat.ff + st_cat.f)/st_cat.total; 
+		
+	if(x3 == 0) {	
+		x3 = (float)(st_cat.ff + st_cat.f + 1)/(st_cat.total + 2); 
+	}
+	
+	long sec = (3600 * t.tm_hour) + (60 * t.tm_min) + (t.tm_sec);
+	float meantime = meanTime(endUser->list.head);
+	float dev = stdDev_time(endUser->list.head, meantime); 
+	
+	//printf(" %f %f \n", meantime, dev);
+	
+	x1_f = -0.9189 - log(amt_cat.stdDev) - (float)(((at - amt_cat.mean) * (at - amt_cat.mean))/(2 * amt_cat.stdDev * amt_cat.stdDev));
+	
+	if (x1_f < -1000) {
+	    x1_f = -1000; // Cap the log value
+	}
+	
+	x1_f = exp(x1_f);
+	
+	if (x1_f < epsilon) {
+	    x1_f = epsilon;
+	}
+	
+	x2_f = (float)Gauss_constant * exp((-1) *(sec - time_cat.mean)*(sec - time_cat.mean) / (2 * (time_cat.stdDev * time_cat.stdDev)))/(time_cat.stdDev);
+	
+	x1 =  (float)Gauss_constant * exp((-1) *(at - endUser->mean)*(at - endUser->mean)/ (2 * (endUser->stdDev * endUser->stdDev)))/endUser->stdDev;
+	
+	if (x1 < epsilon) {
+	    x1 = epsilon;
+	}
+	
+	long long sqr_dev = dev * dev;	
+	
+	float scaling_factor = 1e6;
+	sec /= scaling_factor;
+	meantime /= scaling_factor;
+	dev /= scaling_factor;
+		
+	x2 = -0.9189 - log(dev) - (float)(((sec - meantime) * (sec - meantime))/(2 * sqr_dev));
+	x2 = exp(x2);
+	
+	printf(" %f %f %f \n", x1, x2, x3);
+	
+	float p = y * (x1_f * x2_f * x3_f) / (x1 * x2 * x3);
+	printf(" %f ", p);
+}*/
 
 void detectFraud(item *endUser) {
 	
@@ -1434,31 +1686,29 @@ void detectFraud(item *endUser) {
 			break;
 		}
 		
+		
 		char* token = strtok(line, " "); // Get the first token (amount)
 		if (token != NULL) {
 			amount = atof(token);
 			 // Convert the amount string to float
-			 printf("%f \n", amount);
 		}
 		
 		token = strtok(NULL, " "); // Get the second token (location)
 		if (token != NULL) {
 			strcpy(location, token); // Copy to location
-			printf(" %s \n", location);
 		}
 		
 		token = strtok(NULL, " "); // Get the third token (time)
     		if (token != NULL) {
         		sscanf(token, "%d:%d:%d", &t.tm_hour, &t.tm_min, &t.tm_sec);
-        		printf(" %d %d %d \n", t.tm_hour, t.tm_min, t.tm_sec);
     		}
     		
     		token = strtok(NULL, " "); // Get the fourth token (status)
 		if (token != NULL) {
 			strcpy(status, token); // Copy to status
-			printf(" %c \n", status[0]);
 		}
 		
+		printf("\n-----------------------\n");
 		TrainModel(endUser, location, t, amount, status[0]);
 	}
 	
