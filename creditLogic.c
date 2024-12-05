@@ -4,7 +4,7 @@
 #include"credit.h"
 #include <string.h>
 #include<math.h>
-
+#include <SDL2/SDL.h>
 char *getLine(FILE **fp) {
 	
 	char *line = (char*)malloc(sizeof(char)*300);
@@ -125,34 +125,38 @@ void readUsersData(Map *map, FILE **fp) {
 		
 		token = strtok(NULL, ",");
 		if (sscanf(token, "%d/%d/%d", &client.expiryDate.day, &client.expiryDate.month, &client.expiryDate.year) != 3) {
-        		printf("Error: Invalid expiry date format\n");
-        		free(line);
-        		return;
-    		}
+        	printf("Error: Invalid expiry date format\n");
+        	free(line);
+        	return;
+    	}
     		
-    		token = strtok(NULL, ",");
-		strncpy(client.password, token, sizeof(client.password) - 1);
-    		client.password[sizeof(client.password) - 1] = '\0';
-		
+    	token = strtok(NULL, ",");
+		strncpy(client.password, checkPass(token), sizeof(client.password) - 1);
+    	client.password[sizeof(client.password) - 1] = '\0';
+	
 		token = strtok(NULL, ",");
 		strncpy(client.address.country, token, sizeof(client.address.country) - 1);
-    		client.address.country[sizeof(client.address.country) - 1] = '\0';
-    		
-    		token = strtok(NULL, ",");
+    	client.address.country[sizeof(client.address.country) - 1] = '\0';
+    	
+    	token = strtok(NULL, ",");
 		strncpy(client.address.state, token, sizeof(client.address.state) - 1);
-    		client.address.state[sizeof(client.address.state) - 1] = '\0';
-    		
-    		token = strtok(NULL, ",");
+    	client.address.state[sizeof(client.address.state) - 1] = '\0';
+    	
+    	token = strtok(NULL, ",");
 		strncpy(client.address.city, token, sizeof(client.address.city) - 1);
-    		client.address.city[sizeof(client.address.city) - 1] = '\0';
-		
-		
+    	client.address.city[sizeof(client.address.city) - 1] = '\0';
+	
+		printf("%ld %s\n", client.cardNo, client.password);
 		enter_users(map, client);
 		free(line);
 	}	
 	
 	free(line);
 }	
+
+/* function to encrypte the passsord given by the user
+ * manipulates the ascii of the characters in the pwd
+ */
     
 char *checkPass(char *input) {
     int asc, i = 0;
@@ -177,34 +181,36 @@ char *checkPass(char *input) {
 
 
 int checkUser(Map *map, long int no, char *pass) {
-    int idx = hashfunction(no);
     
-    if (map->array[idx] == NULL) {
-        return -1;  // Return -1 indicating "user not found"
-    }
-
-    item *temp = map->array[idx];
-
-    while (temp != NULL) {
+    int idx = hashfunction(no);
+    int i = 0;
+    while(i < MAPSIZE) {
     	
-        if (temp->client.cardNo == no) {
-            // Transform the input password
-            char *new = checkPass(pass);
-
-            // Compare the transformed password
-            if (strcmp(new, temp->client.password) == 0) {
-                free(new);  // Free the allocated memory for transformed password
-                return 1; 
-                 // Password matched
-            } 
-            
-            else {
-                free(new);  // Free the allocated memory for transformed password
-                return 0;  // Incorrect password
-            }
+    	unsigned int probeIndex = (idx + i * i) % map->size;
+    	
+    	if (map->array[probeIndex] == NULL) {
+            break;  // User not found
         }
-
-        temp = temp->next;
+	
+	item *currentItem = map->array[probeIndex];
+	if(currentItem->client.cardNo == no) {
+		
+		char *new = checkPass(pass);
+		// Compare the transformed password
+            	if (strcmp(new, currentItem->client.password) == 0) {
+                	free(new);  // Free the allocated memory for transformed password
+                	return 1; 
+                	 // Password matched
+            	} 
+            	
+            	else {
+                	free(new);  // Free the allocated memory for transformed password
+                	return 0;  // Incorrect password
+            	}
+	}
+	
+	
+	i++;
     }
 
     return -1;  // Return -1 indicating "user not found"
@@ -256,7 +262,7 @@ void readCsv(dll *list, FILE **fp) {
 	
 		line = getLine(fp);
 		
-		if(strcmp(line, "") == 0) {
+		if(strcmp(line, "") == 0 || line == NULL) {
 			break;
 		}
 		
@@ -288,7 +294,7 @@ void readCsv(dll *list, FILE **fp) {
 		//country 
 		token = strtok(NULL, ",");
 		strncpy(payment_place.country, token, sizeof(payment_place.country) - 1);
-		payment_place.state[sizeof(payment_place.country) - 1] = '\0'; // Ensure null-termination
+		payment_place.country[sizeof(payment_place.country) - 1] = '\0'; // Ensure null-termination
 		
 		token = strtok(NULL, ",");
         	int zip_code = atoi(token);
@@ -303,7 +309,11 @@ void readCsv(dll *list, FILE **fp) {
         	
         	node* newNode = createNode(transaction_id, payment_date, payment_time, payment_place, zip_code, amount, status);
         	insertEnd(list, newNode);
+        	
+        	free(line);
 	}
+	
+	free(line);
 }
 
 /* Temporaryfunction only for purpose of testing  : */
@@ -312,7 +322,8 @@ void display(dll list) {
 	
 	node *temp = list.head;
 	while(temp != NULL) {
-		printf(" %f \n", temp->amount);
+		printf("\n %f ", temp->amount);
+		printf(" date: %d %d %d \n", temp->date_of_payment.day, temp->date_of_payment.month, temp->date_of_payment.year);
 		temp = temp->next;
 	}	
 }
@@ -332,10 +343,10 @@ node *copyList(dll list) {
 		new->zipCode[0] = temp->zipCode[0];
 		new->amount = temp->amount;
 		new->status = temp->status;
+		new->date_of_payment = temp->date_of_payment;
 		
 		p->next = new;
 		p = p->next;
-		
 		temp = temp->next;
 	} 
 	
@@ -479,6 +490,25 @@ int getInput(int num, dll list, item *endUser) {
 			date target;
 			scanf("%d %d %d", &(target.day), &(target.month), &(target.year));
 			find_transactions_by_date(endUser->root, target);
+			break;
+		}
+		
+		case 5 : {
+	
+			printf("\n Enter the location as City State Country (separated by spaces) \n");
+			location place;
+			scanf("%s %s %s", place.city, place.state, place.country);
+			find_transactions_byLocation(list, place);
+			break;
+		}
+		
+		case 6 : {
+			
+			printf("\n The mean transaction Amount : %f \n", endUser->mean);
+			printf("The Standard Deviation : %f \n", endUser->stdDev);
+			
+			display_graph(endUser);
+			
 			
 			break;
 		}
@@ -498,6 +528,103 @@ int getInput(int num, dll list, item *endUser) {
 	}
 	
 	return 1;
+}
+
+void drawLineGraph(SDL_Renderer *renderer, dll list) {
+    
+    if (list.head == NULL) {
+        return; // No data to display
+    }
+    
+    // Calculate min and max values of the amount to scale them appropriately
+    float minAmount = list.head->amount;
+    float maxAmount = list.head->amount;
+    node* temp = list.head;
+    
+    while (temp != NULL) {
+        if (temp->amount < minAmount) minAmount = temp->amount;
+        if (temp->amount > maxAmount) maxAmount = temp->amount;
+        temp = temp->next;
+    }
+    
+    // Scaling factors
+    float yScale = (maxAmount - minAmount) > 0 ? HEIGHT / (maxAmount - minAmount) : 1;
+    int prevX = 50, prevY = HEIGHT - (list.head->amount - minAmount) * yScale;  // Starting point
+
+    temp = list.head;   
+    int count = 1;  // Start from 1, adjusting for proper X spacing
+
+    while (temp != NULL) {
+        // Map the amount to a Y coordinate (invert Y-axis for SDL)
+        int currX = 50 + count * 50; // Adjust X spacing (increase/decrease if needed)
+        int currY = HEIGHT - temp->amount;  // Map the amount to screen space (invert Y)
+
+        // Ensure the current Y is within the height bounds
+        if (currY > HEIGHT) currY = HEIGHT;
+        if (currY < 0) currY = 0;
+
+        // Draw a line between the previous and current point
+        SDL_SetRenderDrawColor(renderer, 0, 128, 255, 255);  // Blue color for the curve
+        SDL_RenderDrawLine(renderer, prevX, prevY, currX, currY);
+
+        // Set previous coordinates for the next iteration
+        prevX = currX;
+        prevY = currY;
+
+        count++;
+        temp = temp->next;
+    }
+}
+
+// Function to draw axis
+void drawAxis(SDL_Renderer *renderer) {
+   
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // Black color
+
+    // Draw X axis
+    SDL_RenderDrawLine(renderer, 50, HEIGHT - 50, WIDTH - 50, HEIGHT - 50);
+    // Draw Y axis
+    SDL_RenderDrawLine(renderer, 50, HEIGHT - 50, 50, 50);
+}
+
+void display_graph(item *endUser) {
+
+    // Initialize SDL
+    SDL_Init(SDL_INIT_VIDEO);
+
+    // Create the window and renderer
+    SDL_Window *window = SDL_CreateWindow("Transaction Line Graph", 
+                                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+                                          WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    int running = 1;
+    SDL_Event event;
+
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = 0;
+            }
+        }
+
+        // Clear the renderer and set the background color
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);  // White background
+        SDL_RenderClear(renderer);
+
+        // Draw the axis and the line graph
+        drawAxis(renderer);
+        drawLineGraph(renderer, endUser->list);  // Draw the line graph
+
+        // Present the rendered content
+        SDL_RenderPresent(renderer);
+    }
+
+    // Cleanup
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
 }
 
 void printRecent(dll list) {
@@ -599,6 +726,8 @@ void find_transactions_by_date(transaction *root, date target_date) {
   
     else if(compareDate(target_date, root->date_of_payment) == 0){
         
+        find_transactions_by_date(root->left, target_date);
+        
         printf("Transaction : \n");
 	printf("%d/%d/%d at %s at %d:%d:%d \n", root->date_of_payment.day, root->date_of_payment.month, root->date_of_payment.year, root->payment_place.city, root->time_of_payment.tm_hour, root->time_of_payment.tm_min, root->time_of_payment.tm_sec );
         
@@ -610,9 +739,38 @@ void find_transactions_by_date(transaction *root, date target_date) {
 	else 
 		printf(" Status : Failed\n");
         
+        
+        find_transactions_by_date(root->right, target_date);
+        
     }
     
     return;
+}
+
+void find_transactions_byLocation(dll list, location place) {
+	
+	node *temp = list.head;
+	
+	while(temp != NULL) {
+		
+		if(strcmp(temp->payment_place.country, place.country) == 0  && strcmp(temp->payment_place.state, place.state) == 0 && strcmp(temp->payment_place.city, place.city) == 0)  {
+		
+			
+			printf("Transaction : \n");
+			printf("%d/%d/%d at %s at %d:%d:%d \n", temp->date_of_payment.day, temp->date_of_payment.month, temp->date_of_payment.year, temp->payment_place.city, temp->time_of_payment.tm_hour, temp->time_of_payment.tm_min, temp->time_of_payment.tm_sec );
+			
+			printf("Amount %f \n", temp->amount);
+		     	
+			if(temp->status == 'S' || temp->status == 's') 
+				printf(" Status : Successful \n");
+					
+			else 
+				printf(" Status : Failed\n");
+		}
+		
+		
+		temp = temp->next;
+	}
 }
 
 /* Here 1 means true;
@@ -639,7 +797,6 @@ int multiple_failed_transactions(node *temp) {
 	
 	return (count >= 3 ? 1 : 0);
 }
-
 
 int is_small_time_frame(struct tm last_time, struct tm current_time) {
 
@@ -760,7 +917,6 @@ void fraudAlert(dll list, item *endUser) {
 char timeOfDay(struct tm t) {
 	
 	char d;
-	
 	if(t.tm_hour >= 6 && t.tm_hour <= 11) {
 		d = 'm';
 	}
@@ -778,8 +934,8 @@ char timeOfDay(struct tm t) {
 
 int *flag(item *endUser) {
 	
-	/*This traverses through the list and identifies and flags the transactions as fraud or non fraud. 
-	*/
+	/*This traverses through the list and identifies and flags the transactions as fraud or non fraud.*/
+	
 	node *temp = endUser->list.head;
 	int *freq = (int*)malloc(sizeof(int)*2);
 	int count = 0;
@@ -1002,6 +1158,9 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	else {
 		zscore = 3;
 	}
+	/* if (zscore < 0) {
+		zscore = zscore * (-1);
+	} */
 	
 	// x2
 	if(strcmp(country, "India") == 0) {
@@ -1033,7 +1192,6 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	
 	float x1, x2, x3, x4;
 	float x1_f, x2_f, x3_f, x4_f;
-	
 	
 	// x1;
 	if(zscore == 1) {

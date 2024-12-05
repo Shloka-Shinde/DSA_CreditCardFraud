@@ -14,6 +14,8 @@
 #define YELLOW "\033[33m"
 #define CYAN "\033[36m"
 #define epsilon 1e-6
+#define WIDTH 800
+#define HEIGHT 600
 
 typedef struct countLoc{
 	int fin;
@@ -193,6 +195,8 @@ int compareDate(date d1, date d2);
 
 void find_transactions_by_date(transaction *root, date target_date);
 
+void find_transactions_byLocation(dll list, location place);
+
 int is_small_time_frame(struct tm last_time, struct tm current_time); 
 
 int frequent_trans(node *temp); 
@@ -206,3 +210,5 @@ char timeOfDay(struct tm t);
 void TrainModel(item *endUser, char *country, struct tm t, float at, char status);
 
 void detectFraud(item *endUser);
+
+void display_graph(item *endUser);
