@@ -1,0 +1,29 @@
+Feature Selection:
+
+Transaction amount
+Location
+Time of transaction
+Success/Failure status
+
+ In Naive Bayes, we calculate the probabilities for each feature given that the transaction is fraudulent or non-fraudulent. This requires calculating:
+
+P(Fraud): Probability of a transaction being fraudulent.
+P(Feature | Fraud): Probability of observing a specific feature value given that the transaction is fraudulent.
+P(Feature | Non-Fraud): Probability of observing a specific feature value given that the transaction is not fraudulent.
+
+For each feature, the probability is computed as: P(Feature | Fraud) = (Count of fraudulent transactions with this feature) / (Total fraudulent transactions)
+
+Create hash maps to store the count of each feature for both fraudulent and non-fraudulent transactions. For example:
+Count how many times each transaction amount has been observed in both fraudulent and non-fraudulent transactions.
+Count how often a specific location or time was observed for both fraud and non-fraud cases.
+
+Since Naive Bayes may run into problems when a feature value has never been observed in the training data (leading to zero probability), apply Laplace smoothing. This adds a small constant to each count: P(Feature | Fraud) = (Count + 1) / (Total + Number of feature values)
+
+Once the model is trained, we can predict if a new transaction is fraudulent or not. For this, we use the Bayes theorem:P(Fraud | Features) ∝ P(Fraud) * P(Feature1 | Fraud) * P(Feature2 | Fraud) * ... * P(FeatureN | Fraud)
+Similarly, compute the probability of the transaction being non-fraudulent: P(Non-Fraud | Features) ∝ P(Non-Fraud) * P(Feature1 | Non-Fraud) * P(Feature2 | Non-Fraud) * ... * P(FeatureN | Non-Fraud)
+
+For features like the transaction amount, instead of using discrete counts, assume a Gaussian distribution and calculate the likelihood using the Gaussian probability density function (PDF):
+P(Amount | Fraud) = (1 / sqrt(2πσ²)) * exp(-(Amount - μ)² / (2σ²))
+Here, μ is the mean and σ is the standard deviation of the transaction amounts in fraudulent or non-fraudulent cases( we have stored this in our hashmap for calculating the z-score)
+
+Compare both probabilities. If P(Fraud | Features) is greater than P(Non-Fraud | Features), the transaction is classified as fraudulent. Otherwise, it’s classified as non-fraudulent.
