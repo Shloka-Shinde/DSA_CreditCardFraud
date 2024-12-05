@@ -41,6 +41,14 @@ Map *initHashMap() {
 	return hashmap;
 } 
 
+/**
+ * Function: 
+ * Computes a hash value for a given credit card number to map it to an index in the hash table.
+ * The function processes the card number in chunks of 4 digits, mixes the chunks using a prime multiplier (37), 
+ * and ensures the resulting hash value fits within the hash table size (MAPSIZE).
+ * This approach helps distribute card numbers uniformly across the hash table.
+ */
+
 int hashfunction(long int card_no) {
 
     unsigned long long a = card_no;
@@ -55,6 +63,15 @@ int hashfunction(long int card_no) {
     // Ensure the hash value fits within the hash table size
     return (unsigned int)(hash % MAPSIZE);   
 }
+
+
+/**
+ * Inserts a new user into the hash map using quadratic probing for collision resolution.
+ * It calculates the hash index for the user's credit card number and creates a new item 
+ * containing the user's details, including name, card number, CVV, expiry date, address, and password.
+ * The function attempts to place the item in the hash table, and if collisions occur, it uses 
+ * quadratic probing to find the next available slot within the table.
+ */
 
 void enter_users(Map *h, user a) {
 	
@@ -91,6 +108,8 @@ void enter_users(Map *h, user a) {
     	
     	return;		
 }
+
+/* Function: Reads user data from a file and populates the hash map with user details. */
 
 void readUsersData(Map *map, FILE **fp) {
 	
@@ -153,7 +172,18 @@ void readUsersData(Map *map, FILE **fp) {
 	
 	free(line);
 }	
-    
+
+/**
+ * This function is responsible for transforming the input password string by applying a transformation to each character.
+ * The transformation modifies the ASCII value of each character based on a simple rule:
+ *    - If the character's ASCII value is less than 90 (uppercase letters), 15 is added to it.
+ *    - If the character's ASCII value is 90 or higher, 16 is subtracted from it.
+ * 
+ * The function then returns the transformed password as a new string.
+ * Use Case:
+ *  - This function is used for password encryption for storage or validation.
+ */
+ 
 char *checkPass(char *input) {
     int asc, i = 0;
     char *line;
@@ -175,7 +205,7 @@ char *checkPass(char *input) {
     return line; // Remember to free this memory after use in checkUser
 }
 
-
+// * This function checks if a user exists in the hash map and if the provided password matches the stored password. 
 int checkUser(Map *map, long int no, char *pass) {
     int idx = hashfunction(no);
     
@@ -425,6 +455,16 @@ float calculateMean(dll *list) {
     return mean;
 }
 
+// Function to calculate the standard deviation of transaction amounts
+// Formula:
+// Standard Deviation (σ) = sqrt( (1/n) * Σ(xi - μ)^2 )
+// Where:
+// - xi is each individual transaction amount
+// - μ is the mean of all transaction amounts
+// - n is the total number of transactions
+// The function calculates the squared difference between each transaction amount and the mean, 
+// sums these squared differences, and returns the square root of the average squared difference.
+
 float calculateStandardDeviation(dll *list) {
     float mean = calculateMean(list);
     node *temp = list->head;
@@ -627,6 +667,10 @@ int is_odd_hour(struct tm time) {
     return 0;
 }
 
+// Function to check if there are multiple failed transactions
+// It traverses the linked list of transactions and counts consecutive failed transactions (status 'f' or 'F')
+// If there are 3 or more consecutive failed transactions, it returns 1 (indicating fraud), otherwise 0.
+
 int multiple_failed_transactions(node *temp) {
 	
 	int count = 0;
@@ -640,6 +684,7 @@ int multiple_failed_transactions(node *temp) {
 	return (count >= 3 ? 1 : 0);
 }
 
+// Function to check if two transactions occurred within a small time frame (5 minutes)
 
 int is_small_time_frame(struct tm last_time, struct tm current_time) {
 
@@ -647,6 +692,8 @@ int is_small_time_frame(struct tm last_time, struct tm current_time) {
     
     return seconds_diff < 300; // Check if the difference is less than 5 minutes
 }
+
+// Function to detect frequent transactions within a short time frame (5 minutes)
 
 int frequent_trans(node *temp) {
 	
@@ -761,19 +808,20 @@ char timeOfDay(struct tm t) {
 	
 	char d;
 	
+    // Check if the time is between 6 AM and 11:59 AM
 	if(t.tm_hour >= 6 && t.tm_hour <= 11) {
-		d = 'm';
+		d = 'm'; // Morning
 	}
-	
+	// Check if the time is between 12 PM and 11:59 PM
 	else if(t.tm_hour >= 12 && t.tm_hour <= 23) {
-		d = 'e';
+		d = 'e'; // Evening
 	}
-	
+	// For all other cases (midnight to 5:59 AM)
 	else {
-		d = 'o';
+		d = 'o'; // Other (Early morning or midnight)
 	}
 	
-	return d;
+	return d; 
 }
 
 int *flag(item *endUser) {
@@ -836,22 +884,22 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 		struct tm t = temp->time_of_payment;
 		
 		if(strcmp(temp->payment_place.country, "India") == 0) {
-			c = 'i';
+			c = 'i'; //India
 		}
 		
 		else {
-			c = 'n';
+			c = 'n'; //non-India
 		}
 	
 		if(t.tm_hour < 6 || t.tm_hour > 11) {
-			tim = 'o';
+			tim = 'o'; // Outside morning (6 AM - 11 AM)
 		}
 		else if(t.tm_hour > 6 && t.tm_hour < 16) {
-			tim = 'd';
+			tim = 'd'; // Daytime (6 AM - 4 PM)
 		}
 		
 		else {
-			tim = 'n';
+			tim = 'n'; // Night (for any other cases)
 		}
 		
 		if(temp->fraud == 1) {
@@ -877,13 +925,13 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 			
 			//x2;
 			if(c == 'i') {
-				loc_cat->fin += 1;
+				loc_cat->fin += 1; // Fraudulent transaction in India
 				loc_cat->total_f += 1;
 				loc_cat->total += 1;
 			}
 			
 			else {
-				loc_cat->fout += 1;
+				loc_cat->fout += 1; // Fraudulent transaction outside India
 				loc_cat->total_f += 1;
 				loc_cat->total += 1;
 			}
@@ -909,13 +957,13 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 			
 			//x4;
 			if(temp->status == 'f' || temp->status == 'F') {
-				st_cat->ff += 1;
+				st_cat->ff += 1; // Failed fraudulent transaction
 				st_cat->total_f += 1;
 				st_cat->total += 1;
 			}
 			
 			else {
-				st_cat->sf += 1;
+				st_cat->sf += 1; // Successful fraudulent transaction
 				st_cat->total_f += 1;
 				st_cat->total += 1;
 			}
@@ -942,12 +990,12 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 			
 			//x2;
 			if(c == 'i') {
-				loc_cat->in += 1;
+				loc_cat->in += 1; // Non-fraudulent transaction in India
 				loc_cat->total += 1;
 			}
 			
 			else {
-				loc_cat->out += 1;
+				loc_cat->out += 1; // Non-fraudulent transaction outside India
 				loc_cat->total += 1;
 			}
 			
@@ -969,12 +1017,12 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 				
 			//x4;
 			if(temp->status == 'f' || temp->status == 'F') {
-				st_cat->f += 1;
+				st_cat->f += 1; // Failed non-fraudulent transaction
 				st_cat->total += 1;
 			}
 			
 			else {
-				st_cat->s += 1;
+				st_cat->s += 1; // Successful non-fraudulent transaction
 				st_cat->total += 1;
 			}
 			
@@ -1012,7 +1060,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		c = 'n';
 	}
 	
-	//x3
+	// x3
 	if(t.tm_hour < 6 || t.tm_hour > 11) {
 		tim = 'o';
 	}
@@ -1103,7 +1151,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		}
 	}
 	
-	//x2: 
+	// x2: 
 	if(c == 'i') {
 		x2_f = (float)loc_cat.fin/loc_cat.total_f;
 		
@@ -1148,7 +1196,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		}	
 	}
 	
-	//x3 
+	// x3 
 	if(tim == 'o') {
 		x3_f = (float)time_cat.odf/time_cat.total_f;
 		
@@ -1213,7 +1261,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		}
 	}
 	
-	//x4 
+	// x4 
 	if(status == 's' || status == 'S') {
 		x4_f = st_cat.sf/st_cat.total_f;
 		
@@ -1312,4 +1360,4 @@ void detectFraud(item *endUser) {
 	}
 	
 	free(line);
-}	
+}
