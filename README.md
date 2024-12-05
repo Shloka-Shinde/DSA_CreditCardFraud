@@ -21,6 +21,10 @@ Monitor the time intervals between consecutive transactions. Flag any transactio
 
 **Algorithms:**
 1. Naive Bayes: Predicts whether a transaction is fraudulent based on historical data and probabilities.
+
+## Naive Bayes
+Naive Bayes is a probabilistic classifier based on Bayes' theorem and the assumption of independence between features. It is known for its simplicity and computational efficiency. In credit card fraud detection, Naive Bayes calculates the probability of a transaction being fraudulent given its features. By selecting the class with the highest probability, we can classify transactions as fraudulent or non-fraudulent. Despite its naive assumption, Naive Bayes often performs well in real-world scenarios.
+
 2. Z-Score Calculation: Flags transactions significantly deviating from a user’s average spending.
 3. Time Interval Analysis: Detects rapid consecutive transactions, which could indicate suspicious activity.
 4. Location Anomaly Check: Flags geographically inconsistent transactions in short time intervals.
