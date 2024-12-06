@@ -459,7 +459,9 @@ void printMenu() {
 	printf(CYAN"5. Transaction done on particular location \n");
 	printf(CYAN"6. Statistics and Insights \n");
 	printf(CYAN"7. Show flagged transactions \n");
-	printf(CYAN"8. Exit Program \n");
+	printf(CYAN"8. Search for potential frauds from recent transaction\n");
+	printf(CYAN"9. Exit Program \n");
+
 }
 
 int getInput(int num, dll list, item *endUser) {
@@ -512,9 +514,15 @@ int getInput(int num, dll list, item *endUser) {
 		case 7 : {
 			fraudAlert(list, endUser);
 			break;
-		}	
+		}
 		
 		case 8 : {
+			
+			detectFraud(endUser);
+			break;	
+		}	
+		
+		case 9 : {
 			return 0;
 		}
 		
@@ -1432,241 +1440,6 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	return;
 }
 
-float MeanAmt(node *head) {
-	
-	node *temp = head;
-	float mean = 0;
-	int count = 0;
-	
-	while(temp != NULL) {
-		
-		if(temp->fraud == 1) {
-			mean += temp->amount;
-			count++;
-		}
-		
-		temp = temp->next;
-	}
-	
-	mean = mean/(float)count;
-	return mean;
-}
-
-float dev(node *head, float mean) {
-	
-	node *temp = head;
-	float sum = 0;
-	int count = 0;
-	
-	while(temp != NULL) {
-		if(temp->fraud == 1) {
-			float diff = temp->amount - mean;
-			sum += (diff*diff);
-			count++;
-		}
-		
-		temp = temp->next;
-	}
-	
-	sum = sum/(float)count;
-	
-	return sum;
-}
-
-/*
-void FindFrequency(item *endUser, countTime *time, countAmt* amt, countStatus *st_cat) {
-	
-	node *temp = endUser->list.head;
-	long seconds = 0;
-	
-	while(temp != NULL) {
-		
-		if(temp->fraud == 1) {
-			
-			amt->mean += temp->amount;
-			amt->total_f += 1;
-			
-			seconds += (temp->time_of_payment.tm_hour * 3600) + (temp->time_of_payment.tm_min * 60) + (temp->time_of_payment.tm_sec);
-			
-			time->total_f += 1;	
-			
-			if(temp->status == 'f' || temp->status == 'F') {
-				st_cat->ff += 1;
-				st_cat->total_f += 1;
-				st_cat->total += 1;
-				
-			}
-			
-			else {
-				st_cat->sf += 1;
-				st_cat->total_f += 1;
-				st_cat->total += 1;
-			}
-		}
-		
-		else {
-		
-			if(temp->status == 'f' || temp->status == 'F') {
-				st_cat->f += 1;
-				st_cat->total += 1;
-			}
-			
-			else {
-				st_cat->s += 1;
-				st_cat->total += 1;
-			}
-		}
-		
-		temp = temp->next;
-	}
-	
-	amt->mean = (float)amt->mean/amt->total_f;
-	time->mean = (float)seconds/time->total_f;	
-} 
-
-void Calculate_stdDev(item *endUser, countAmt *amount, countTime *time) {
-    
-    float meanAmt = amount->mean;
-    float meanTime = time->mean;
-    
-    node *temp = endUser->list.head;
-    float sum = 0.0;
-    long tim = 0;
-    
-    while(temp != NULL) {
-        
-        if(temp->fraud == 1) {
-        	
-        	float diff = temp->amount - meanAmt;
-		sum += (diff *diff);
-		
-	       	long sec = (temp->time_of_payment.tm_hour * 3600) + (temp->time_of_payment.tm_min * 60) + (temp->time_of_payment.tm_sec);
-	      	sec = sec - meanTime;
-	      	tim += (sec*sec);
-        }
-      	
-        temp = temp->next;
-    }
-    
-    sum = (sqrt)(sum / (float)amount->total_f);
-    tim = (sqrt)(tim / (float)time->total_f);
-    
-    amount->stdDev = sum;
-    time->stdDev = tim;
-}
-
-float meanTime(node *head) {
-	
-	node *temp = head;
-	long sec = 0;
-	int count = 0;
-	float mean;
-	while(temp != NULL) {
-		sec += (temp->time_of_payment.tm_hour * 3600) + (temp->time_of_payment.tm_min * 60) + (temp->time_of_payment.tm_sec);
-		count++;
-		temp = temp->next;
-	}	
-	
-	mean = (float)sec/(float)count;
-	return mean;
-}
-
-float stdDev_time(node *head, float mean) {
-	
-	node *temp = head;
-	long tim = 0;
-	
-	int count = 0;
-	
-	while(temp != NULL) {
-		
-		long sec = (temp->time_of_payment.tm_hour * 3600) + (temp->time_of_payment.tm_min * 60) + (temp->time_of_payment.tm_sec);
-	      	sec = sec - mean;
-	      	tim += (sec*sec);
-		temp = temp->next;
-		count++;
-	}
-	
-	float dev = (float)tim/count;	
-	return dev;
-}
-
-void TrainModel(item *endUser, char *country, struct tm t, float at, char status) {
-	
-	int *counts = flag(endUser);
-	float y = (float)counts[1]/counts[0]; 
-	
-	countTime time_cat = {0.0, 0.0, 0};
-	countAmt amt_cat = {0.0, 0.0, 0};
-	countStatus st_cat = {0,0,0,0,0,0};
-	
-	float x1,x2, x3;
-	float x1_f, x2_f, x3_f;
-
-	FindFrequency(endUser, &time_cat, &amt_cat, &st_cat);
-	//printf(" %f %f \n", time_cat.mean, amt_cat.mean);
-	
-	Calculate_stdDev(endUser, &amt_cat, &time_cat);
-	
-	//printf(" %f %f \n", amt_cat.stdDev, time_cat.stdDev);
-	x3_f = (float)st_cat.ff/st_cat.total_f;
-		
-	if(x3_f == 0) {
-		x3_f = (float)(st_cat.ff + 1)/(st_cat.total_f + 2);
-	}
-		
-	if(x3_f >= 1) {
-		x3_f = (float)(1 - epsilon);
-	}	
-		
-	x3 = (float)(st_cat.ff + st_cat.f)/st_cat.total; 
-		
-	if(x3 == 0) {	
-		x3 = (float)(st_cat.ff + st_cat.f + 1)/(st_cat.total + 2); 
-	}
-	
-	long sec = (3600 * t.tm_hour) + (60 * t.tm_min) + (t.tm_sec);
-	float meantime = meanTime(endUser->list.head);
-	float dev = stdDev_time(endUser->list.head, meantime); 
-	
-	//printf(" %f %f \n", meantime, dev);
-	
-	x1_f = -0.9189 - log(amt_cat.stdDev) - (float)(((at - amt_cat.mean) * (at - amt_cat.mean))/(2 * amt_cat.stdDev * amt_cat.stdDev));
-	
-	if (x1_f < -1000) {
-	    x1_f = -1000; // Cap the log value
-	}
-	
-	x1_f = exp(x1_f);
-	
-	if (x1_f < epsilon) {
-	    x1_f = epsilon;
-	}
-	
-	x2_f = (float)Gauss_constant * exp((-1) *(sec - time_cat.mean)*(sec - time_cat.mean) / (2 * (time_cat.stdDev * time_cat.stdDev)))/(time_cat.stdDev);
-	
-	x1 =  (float)Gauss_constant * exp((-1) *(at - endUser->mean)*(at - endUser->mean)/ (2 * (endUser->stdDev * endUser->stdDev)))/endUser->stdDev;
-	
-	if (x1 < epsilon) {
-	    x1 = epsilon;
-	}
-	
-	long long sqr_dev = dev * dev;	
-	
-	float scaling_factor = 1e6;
-	sec /= scaling_factor;
-	meantime /= scaling_factor;
-	dev /= scaling_factor;
-		
-	x2 = -0.9189 - log(dev) - (float)(((sec - meantime) * (sec - meantime))/(2 * sqr_dev));
-	x2 = exp(x2);
-	
-	printf(" %f %f %f \n", x1, x2, x3);
-	
-	float p = y * (x1_f * x2_f * x3_f) / (x1 * x2 * x3);
-	printf(" %f ", p);
-}*/
-
 void detectFraud(item *endUser) {
 	
 	char status[10];
@@ -1714,3 +1487,5 @@ void detectFraud(item *endUser) {
 	
 	free(line);
 }	
+
+

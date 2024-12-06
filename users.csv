@@ -1,20 +1,6 @@
 name,creditcard_number,cvv,expiry_date,password,country,state,city
 Amit Sharma,4111111111111111,123,12/10/2345,Q]Yd@ABC,India,Maharashtra,Mumbai
-Priya Singh,5500000000000004,234,15/05/2345,`bYiQDEFG,India,Maharashtra,Pune
-Ravi Kumar,4111222233334444,345,31/07/2346,bQfYGFED,India,Karnataka,Bengaluru
-Neha Gupta,3777777777777777,456,15/06/2346,^UXQCBA@,India,Karnataka,Mysuru
-Kunal Mehta,6011000000000004,567,25/12/2345,[e^Q\@AB,India,Tamil Nadu,Chennai
-Anjali Verma,4111444455556666,678,01/07/2346,Q^ZQ\YBA@,India,Tamil Nadu,Coimbatore
-Vikas Joshi,5000000000000009,789,16/05/2347,fY[QcCDEF,India,Delhi,New Delhi
-Pooja Reddy,6012000000000002,890,24/08/2347,`__ZQFEDC,India,Delhi,Noida
-Sandeep Yadav,4716123456781234,123,10/12/2345,cQ^TUU`GH?,India,West Bengal,Kolkata
-Rita Patel,6011000000000005,234,05/05/2347,bYdQ@??@,India,West Bengal,Siliguri
-Manoj Singh,5412345678901234,345,07/12/2348,]Q^_Z@AB,India,Uttar Pradesh,Kanpur
-Ayesha Khan,4111111111111112,456,29/12/2346,QiUcXQCDE,India,Uttar Pradesh,Agra
-Deepak Sharma,4111444455556667,567,22/07/2347,TUU`Q[FGH,India,Kerala,Kochi
-Mitali Joshi,5105105105105100,678,15/08/2345,]YdQ\Y@ABC,India,Kerala,Thiruvananthapuram
-Raghav Gupta,4111222233334445,789,18/07/2345,bQWXQfDEFG,India,Rajasthan,Jaipur
-Sonali Patel,6011511151111111,890,05/12/2348,c_^Q\YCBA@,India,Rajasthan,Udaipur
-Rohit Reddy,6012000000000003,123,15/06/2345,b_XYd@??@,India,Andhra Pradesh,Visakhapatnam
-Simran Kaur,4111444455556668,234,17/12/2346,cY]bQ^FGH,India,Andhra Pradesh,Vijayawada
-Arjun Mehta,5500000000000001,345,28/12/2347,QbZe^HGFE,India,Punjab,Chandigarh
+Nikhil Nair,5536895524798126,321,31/12/27,ePS^YSh]deTi,India,Gujrat,Surat
+Ajay Khatri,5137050341037117,869,30/11/28,g?g@UXd,India,Maharashtra,Nagpur
+Rahul Sharma,5420353909603650,126,6/6/26,\`GSVF`?]h[`,India,Goa,Panji
+Mitali Verma,5298686276020167,274,30/6/26,fUb]Q\YdQ\YAE,India,Maharashtra,Nashik
