@@ -43,6 +43,15 @@ Map *initHashMap() {
 	return hashmap;
 } 
 
+
+/**
+ * Function: 
+ * Computes a hash value for a given credit card number to map it to an index in the hash table.
+ * The function processes the card number in chunks of 4 digits, mixes the chunks using a prime multiplier (37), 
+ * and ensures the resulting hash value fits within the hash table size (MAPSIZE).
+ * This approach helps distribute card numbers uniformly across the hash table.
+ */
+
 int hashfunction(long int card_no) {
 
     unsigned long long a = card_no;
@@ -57,6 +66,14 @@ int hashfunction(long int card_no) {
     // Ensure the hash value fits within the hash table size
     return (unsigned int)(hash % MAPSIZE);   
 }
+
+/**
+ * Inserts a new user into the hash map using quadratic probing for collision resolution.
+ * It calculates the hash index for the user's credit card number and creates a new item 
+ * containing the user's details, including name, card number, CVV, expiry date, address, and password.
+ * The function attempts to place the item in the hash table, and if collisions occur, it uses 
+ * quadratic probing to find the next available slot within the table.
+ */
 
 void enter_users(Map *h, user a) {
 	
@@ -86,6 +103,7 @@ void enter_users(Map *h, user a) {
 		unsigned int probeIndex = (idx + i * i) % MAPSIZE;
 		if (arr[probeIndex] == NULL) { // Slot is empty
 		    arr[probeIndex] = new_item;
+		    h->count++;
 		    return;
 		}
 		i++;
@@ -93,6 +111,8 @@ void enter_users(Map *h, user a) {
     	
     	return;		
 }
+
+/* Function: Reads user data from a file and populates the hash map with user details. Uses strtok function to tokenize the string based on delimeter here ',' */
 
 void readUsersData(Map *map, FILE **fp) {
 	
@@ -155,6 +175,17 @@ void readUsersData(Map *map, FILE **fp) {
 	
 	free(line);
 }	
+
+/**
+ * This function is responsible for transforming the input password string by applying a transformation to each character.
+ * The transformation modifies the ASCII value of each character based on a simple rule:
+ *    - If the character's ASCII value is less than 90 (uppercase letters), 15 is added to it.
+ *    - If the character's ASCII value is 90 or higher, 16 is subtracted from it.
+ * 
+ * The function then returns the transformed password as a new string.
+ * Use Case:
+ *  - This function is used for password encryption for storage or validation.
+ */
     
 char *checkPass(char *input) {
     int asc, i = 0;
@@ -176,6 +207,7 @@ char *checkPass(char *input) {
     line[i] = '\0';
     return line; // Remember to free this memory after use in checkUser
 }
+
 
 item *find(Map *map, long int no) {
 	
@@ -200,6 +232,7 @@ item *find(Map *map, long int no) {
     return NULL; 
 }
 
+// * This function checks if a user exists in the hash map and if the provided password matches the stored password.
 int checkUser(Map *map, long int no, char *pass) {
     
     int idx = hashfunction(no);
@@ -236,7 +269,6 @@ int checkUser(Map *map, long int no, char *pass) {
 }
 
 void init_dll(dll *list) {
-
 	list->head = NULL;
 	list->end = NULL;
 }
@@ -338,18 +370,8 @@ void readCsv(dll *list, FILE **fp) {
 	free(line);
 }
 
-/* Temporaryfunction only for purpose of testing  : */
-
-void display(dll list) {
-	
-	node *temp = list.head;
-	while(temp != NULL) {
-		printf("\n %f ", temp->amount);
-		printf(" date: %d %d %d \n", temp->date_of_payment.day, temp->date_of_payment.month, temp->date_of_payment.year);
-		temp = temp->next;
-	}	
-}
-
+/*Purpose :  To create a copy of the linked list, so that this could be used to create a binary search tree.
+*/
 node *copyList(dll list) {
 	node *temp = list.head;
 	node *p;
@@ -425,15 +447,6 @@ transaction *sortedToBST(node *head) {
     	return root;
 }
 
-void traversal(transaction *root) {
-	
-	if(root != NULL) {
-		traversal(root->left);
-		printf(" %f \n", root->amount);
-		traversal(root->right);	
-	}
-}
-
 float calculateMean(dll *list) {
     node *temp = list->head;
     float mean = 0.00;
@@ -441,8 +454,12 @@ float calculateMean(dll *list) {
     
     // Traverse the linked list and sum the amounts
     while (temp != NULL) {
-        mean = mean + temp->amount;  // Accumulate the amount
-        count++;  // Increment the count
+    
+    	if (temp->status == 'S' || temp->status == 's') {
+		mean = mean + temp->amount;  // Accumulate the amount
+		count++;  // Increment the count
+	}
+	
         temp = temp->next;  // Move to the next node
     }
 
@@ -458,16 +475,28 @@ float calculateMean(dll *list) {
     return mean;
 }
 
+/* Function to calculate the standard deviation of transaction amounts
+ Formula:
+// Standard Deviation (σ) = sqrt( (1/n) * Σ(xi - μ)^2 )
+// Where:
+// - xi is each individual transaction amount
+// - μ is the mean of all transaction amounts
+// - n is the total number of transactions
+// The function calculates the squared difference between each transaction amount and the mean, 
+// sums these squared differences, and returns the square root of the average squared difference.*/
+
 float calculateStandardDeviation(dll *list) {
+    
     float mean = calculateMean(list);
     node *temp = list->head;
     int count = 0;
     float sum = 0.0;
     while(temp != NULL) {
-        
-        float diff = temp->amount - mean;
-        sum += diff * diff;
-        count++;
+        if (temp->status == 'S' || temp->status == 's') {
+		float diff = temp->amount - mean;
+		sum += diff * diff;
+		count++;
+        }
         temp = temp->next;
         
     }
@@ -725,6 +754,11 @@ void oldTonew(dll list) {
 	
 }
 
+/* This function compares two dates : given if d1 is date appearing first, it returns -1 
+* if d1 appears after d2 it returns 1 
+* In case both dates are the same the function returns, 0 
+*/
+
 int compareDate(date d1, date d2) {
     
     if (d1.year < d2.year) return -1;
@@ -736,7 +770,7 @@ int compareDate(date d1, date d2) {
     if (d1.day < d2.day) return -1;
     if (d1.day > d2.day) return 1;
 
-    return 0;  // If the dates are equal
+    return 0;  
 }
 
 void find_transactions_by_date(transaction *root, date target_date) {
@@ -809,9 +843,15 @@ int is_odd_hour(struct tm time) {
 
     if(time.tm_hour < 6 || time.tm_hour > 22) 
     	return 1;
-    /* Example: odd hours are before 6 AM and after 10 PM */
+    
+    /* Example: odd hours are before 6:00:00 and after 22:00:00  */
     return 0;
 }
+
+
+// Function to check if there are multiple failed transactions
+// It traverses the linked list of transactions and counts consecutive failed transactions (status 'f' or 'F')
+// If there are 3 or more consecutive failed transactions, it returns 1 (indicating fraud), otherwise 0.
 
 int multiple_failed_transactions(node *temp) {
 	
@@ -825,6 +865,8 @@ int multiple_failed_transactions(node *temp) {
 	
 	return (count >= 3 ? 1 : 0);
 }
+
+// Function to check if two transactions occurred within a small time frame (5 minutes)
 
 int is_small_time_frame(struct tm last_time, struct tm current_time) {
     // Zero out the struct to ensure all fields are initialized
@@ -854,6 +896,8 @@ int is_small_time_frame(struct tm last_time, struct tm current_time) {
     
     return seconds_diff < 300; // Check if the difference is less than 5 minutes
 }
+
+// Function to detect frequent transactions within a short time frame (5 minutes)
 
 int frequent_trans(node *temp) {
 	
@@ -971,24 +1015,31 @@ void fraudAlert(dll list, item *endUser) {
 	return;
 }
 
+
 char timeOfDay(struct tm t) {
 	
-	char d;
-	if(t.tm_hour >= 6 && t.tm_hour <= 11) {
-		d = 'm';
+	char d = '\0';
+	
+	//Check if time is between 6 AM and 4PM
+	if(t.tm_hour >= 6 && t.tm_hour < 16) {
+		d = 'm'; // refers to morning.
 	}
 	
-	else if(t.tm_hour >= 12 && t.tm_hour <= 23) {
-		d = 'e';
+	//Check if time is between 4Pm and 10PM
+	else if(t.tm_hour >= 16 && t.tm_hour < 22) {
+		d = 'e'; // refers to evening 
 	}
 	
 	else {
-		d = 'o';
+		d = 'o'; // odd hours
 	}
 	
 	return d;
 }
 
+/*This traverses through the list and identifies and flags the transactions as fraud or non fraud. 
+* Uses the same conditions to flag the transactions as used in the function fraudAlert.
+*/
 int *flag(item *endUser) {
 	
 	node *temp = endUser->list.head;
@@ -1036,6 +1087,7 @@ int *flag(item *endUser) {
 	return freq;
 }
 
+
 void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *time_cat, countStatus *st_cat) {
 	
 	node *temp = endUser->list.head;
@@ -1047,22 +1099,22 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 		struct tm t = temp->time_of_payment;
 		
 		if(strcmp(temp->payment_place.country, "India") == 0) {
-			c = 'i';
+			c = 'i'; // india 
 		}
 		
 		else {
-			c = 'n';
+			c = 'n'; // not india 
 		}
 	
-		if(t.tm_hour < 6 || t.tm_hour > 11) {
-			tim = 'o';
+		if(t.tm_hour < 6 || t.tm_hour > 22) {
+			tim = 'o'; // odd hours
 		}
 		else if(t.tm_hour > 6 && t.tm_hour < 16) {
-			tim = 'd';
+			tim = 'd'; //morning or day 
 		}
 		
 		else {
-			tim = 'n';
+			tim = 'e'; // evening 
 		}
 		
 		if(temp->fraud == 1) {
@@ -1090,7 +1142,8 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 			}
 			
 			//x2;
-			if(c == 'i') {
+			if(c == 'i') { 
+				// Fraudulent transaction in India
 				loc_cat->fin += 1;
 				loc_cat->total_f += 1;
 				loc_cat->total += 1;
@@ -1098,6 +1151,7 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 			}
 			
 			else {
+				// Fraudulent transaction outside India
 				loc_cat->fout += 1;
 				loc_cat->total_f += 1;
 				loc_cat->total += 1;
@@ -1128,13 +1182,15 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 			
 			//x4;
 			if(temp->status == 'f' || temp->status == 'F') {
+				
+				// Failed fraudulent transaction
 				st_cat->ff += 1;
 				st_cat->total_f += 1;
 				st_cat->total += 1;
-				
 			}
 			
 			else {
+				// Successful fraudulent transaction
 				st_cat->sf += 1;
 				st_cat->total_f += 1;
 				st_cat->total += 1;
@@ -1163,11 +1219,13 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 			
 			//x2;
 			if(c == 'i') {
-				loc_cat->in += 1;
+				// Non-fraudulent transaction in India
+				loc_cat->in += 1; 
 				loc_cat->total += 1;
 			}
 			
 			else {
+				// Non-fraudulent transaction outside India
 				loc_cat->out += 1;
 				loc_cat->total += 1;
 			}
@@ -1190,11 +1248,13 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 				
 			//x4;
 			if(temp->status == 'f' || temp->status == 'F') {
+				// Failed non-fraudulent transaction
 				st_cat->f += 1;
 				st_cat->total += 1;
 			}
 			
 			else {
+				// Successful non-fraudulent transaction
 				st_cat->s += 1;
 				st_cat->total += 1;
 			}
@@ -1237,7 +1297,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	}
 	
 	//x3
-	if(t.tm_hour < 6 || t.tm_hour > 11) {
+	if(t.tm_hour < 6 || t.tm_hour > 22) {
 		tim = 'o';
 	}
 	else if(t.tm_hour > 6 && t.tm_hour < 16) {
@@ -1247,224 +1307,10 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		tim = 'n';
 	}
 	
-	
 	float x1, x2, x3, x4;
-	float x1_f, x2_f, x3_f, x4_f;
-	
-	// x1;
-	
-	/*if(zscore == 1) {
-	
-		x1_f = (float)amt_cat.z1f/amt_cat.total_f;
-		
-		if(x1_f == 0) {
-			
- 			x1_f = (float)(amt_cat.z1f + 1)/(amt_cat.total_f + 3);
-		}
-		
-		if(x1_f >= 1) {
-			x1_f = (float)(1 - epsilon);
-		}	
-		
-		x1 = (float)(amt_cat.z1f + amt_cat.z1)/amt_cat.total;
-		
-		if(x1 == 0) {	
-			x1 = (float)(amt_cat.z1f + amt_cat.z1 + 1)/(amt_cat.total + 3);
-		}
-
-	}
-	
-	else if(zscore == 2) {
-		
-		x1_f = (float)amt_cat.z2f/amt_cat.total_f;
-		
-		if(x1_f == 0) {
-			x1_f = (float)(amt_cat.z2f + 1)/(amt_cat.total_f + 3);
-		}
-		
-		if(x1_f >= 1) {
-			x1_f = (float)(1 - epsilon);
-		}
-		
-		x1 = (float)(amt_cat.z2f + amt_cat.z2)/amt_cat.total;
-		
-		if(x1 == 0) {
-			x1 = (float)(amt_cat.z2f + amt_cat.z2 + 1)/(amt_cat.total + 3);
-		}
-		
-	}
-	
-	else {
-		x1_f = (float)amt_cat.z3f/amt_cat.total_f;
-		
-		if(x1_f == 0) {
-			x1_f = (float)(amt_cat.z3f + 1)/(amt_cat.total_f + 3);
-		}
-		
-		if(x1_f >= 1) {
-			
-			x1_f = (float)(1 - epsilon);
-		}
-		
-		x1 = (float)(amt_cat.z3f + amt_cat.z3)/amt_cat.total;
-		
-		if(x1 == 0.00) {
-			
-			x1 = (float)(amt_cat.z3f + amt_cat.z3 + 1)/(amt_cat.total + 3);
-		}
-		
-	}
-	
-	//x2: 
-	if(c == 'i') {
-		x2_f = (float)loc_cat.fin/loc_cat.total_f;
-		
-		if(x2_f == 0) {
-			x2_f = (float)(loc_cat.fin + 1)/(loc_cat.total_f + 2);
-		}
-		
-		if(x2_f >= 1) {
-			x2_f = (float)(1 - epsilon);
-		}
-		
-		x2 = (float)(loc_cat.fin + loc_cat.in)/counts[0];
-		
-		if(x2 == 0) {
-			x2 = (float)(loc_cat.fin + loc_cat.in + 1)/(loc_cat.total_f + 2);
-		}
-	}
-	
-	else {
-		x2_f = (float)loc_cat.fout/loc_cat.total_f;
-	
-		if(x2_f == 0) {
-			x2_f = (float)(loc_cat.fout + 1)/(loc_cat.total_f + 2);
-		}	
-		
-		if(x2_f >= 1) {
-			
-			x2_f = (float)(1 - epsilon);
-		}
-		
-		x2 = (float)(loc_cat.fout + loc_cat.out)/loc_cat.total;
-		
-		if(x2 == 0) {
-			x2 = (float)(loc_cat.fout + loc_cat.out + 1)/(loc_cat.total + 2);
-		}
-			
-	}
-	
-	//x3 
-	if(tim == 'o') {
-		x3_f = (float)time_cat.odf/time_cat.total_f;
-		
-		if(x3_f == 0) {
-			x3_f = (float)(time_cat.odf + 1)/(time_cat.total_f + 3);
-		}
-		
-		if(x3_f >= 1) {
-			
-			x3_f = (float)(1 - epsilon);
-		}
-		
-		x3 = (float)(time_cat.odf + time_cat.od)/time_cat.total;
-		
-		if(x3 == 0) {
-			x3 = (float)(time_cat.odf + time_cat.od + 1)/(time_cat.total + 3);
-		}
-			
-	}
-	
-	else if(tim == 'd') {
-		x3_f = (float)time_cat.df/time_cat.total_f;
-		
-		if(x3_f == 0) {
-			x3_f = (float)(time_cat.df + 1)/(time_cat.total_f + 3);
-		}
-		
-		if(x3_f >= 1) {
-			x3_f = (float)(1 - epsilon);
-		}
-		
-		x3 = (float)(time_cat.df + time_cat.d)/time_cat.total;
-		
-		if(x3 == 0) {
-			x3 = (float)(time_cat.df + time_cat.d + 1)/(time_cat.total + 3);
-		}
-		
-	}
-	
-	else {
-		x3_f = (float)time_cat.nf/time_cat.total_f;
-		
-		if(x3_f == 0) {
-			x3_f = (float)(time_cat.nf + 1)/(time_cat.total_f + 3);
-		}
-		
-		if(x3_f >= 1) {
-			x3_f = (float)(1 - epsilon);
-		}
-		
-		x3 = (float)(time_cat.nf + time_cat.n)/time_cat.total;
-		
-		if(x3 == 0) {
-			x3 = (float)(time_cat.nf + time_cat.n + 1)/(time_cat.total + 3);
-		}
-		
-	}
-	
-	//x4 
-	if(status == 's' || status == 'S') {
-		x4_f = (float)st_cat.sf/st_cat.total_f;
-		
-		if(x4_f == 0) {
-			x4_f = (float)(st_cat.sf + 1)/(st_cat.total_f + 2);
-		}
-		
-		if(x4_f >= 1) {
-			x4_f = (float)(1 - epsilon);
-		}
-		
-		x4 = (float)(st_cat.sf + st_cat.s)/st_cat.total; 
-		
-		if(x4 == 0) {
-			x4 = (float)(st_cat.sf + st_cat.s + 1)/(st_cat.total + 2);
-		}
-			
-	}
-	
-	else {
-		x4_f = (float)st_cat.ff/st_cat.total_f;
-		
-		if(x4_f == 0) {
-			x4_f = (float)(st_cat.ff + 1)/(st_cat.total_f + 2);
-		}
-		
-		if(x4_f >= 1) {
-			x4_f = (float)(1 - epsilon);
-		}	
-		
-		x4 = (float)(st_cat.ff + st_cat.f)/st_cat.total; 
-		
-		if(x4 == 0) {
-			x4 = (float)(st_cat.ff + st_cat.f + 1)/(st_cat.total + 2); 
-		}
-	}*/
-	
-	/*float p1_f =  -0.9189 - (float)log(std) - (float)(((float)(at - mn) * (float)(at - mn))/(2 * std * std));
-	printf(" %f \n", p1_f);*/
-	
-	/*float p = (float)y * (x4_f * x3_f * x1_f * x2_f)/(x1 * x2 * x3 * x4);
-	
-	if(p >= 1) {
-		printf(RED"\n Alert : High Risk Transaction Detected  \n");
-		return;
-	}
-	
-	printf(YELLOW"The probability that this transaction is fraudulent is \n");
-	printf(YELLOW" %f ", p);*/
-	
+	float x1_f, x2_f, x3_f, x4_f;	
 	float pnf, pf;
+	
 	if(zscore == 1) {
 		
 		x1_f = (float)(amt_cat.z1f + 1)/(counts[1] + 3);
