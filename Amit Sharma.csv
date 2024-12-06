@@ -66,7 +66,7 @@ transaction_id,date_of_payment,time_of_payment,city,state,country,zipCode,amount
 150,23-06-2018,19:25:22,Mumbai,Maharashtra,India,400001,2545,successful
 151,24-06-2018,11:29:20,Mumbai,Maharashtra,India,400001,157,failed
 152,24-06-2018,14:37:00,Mumbai,Maharashtra,India,400001,211,failed
-153,25-06-2018,14:23:22,Mumbai,Maharashtra,India,400001,2074,successful
+153,25-06-2018,14:23:22,Mumbai,Maharashtra,India,400001,2074,failed
 154,26-06-2018,19:47:42,Mumbai,Maharashtra,India,400001,1990,successful
 155,27-06-2018,18:19:27,Mumbai,Maharashtra,India,400001,550,successful
 156,27-06-2018,18:43:23,Mumbai,Maharashtra,India,400001,450,successful
@@ -85,4 +85,3 @@ transaction_id,date_of_payment,time_of_payment,city,state,country,zipCode,amount
 168,31-08-2018,10:01:15,Amritsar,Punjab,India,123456,510,successful
 169,13-09-2018,21:01:47,Amritsar,Punjab,India,123456,883,successful
 170,15-09-2018,06:34:17,Mumbai,Maharashtra,India,400001,157,successful
-

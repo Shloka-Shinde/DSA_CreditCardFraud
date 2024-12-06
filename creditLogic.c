@@ -1214,6 +1214,8 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	char tim;
 	
 	float y = (float)counts[1]/counts[0]; 
+	float x = 1 - y; //probability of non fraud transaction
+	int total_nf = counts[0] - counts[1];
 	
 	// x1
 	if(fabs(zscore) <= 1.5) {
@@ -1251,7 +1253,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	
 	// x1;
 	
-	if(zscore == 1) {
+	/*if(zscore == 1) {
 	
 		x1_f = (float)amt_cat.z1f/amt_cat.total_f;
 		
@@ -1447,12 +1449,12 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		if(x4 == 0) {
 			x4 = (float)(st_cat.ff + st_cat.f + 1)/(st_cat.total + 2); 
 		}
-	}
+	}*/
 	
 	/*float p1_f =  -0.9189 - (float)log(std) - (float)(((float)(at - mn) * (float)(at - mn))/(2 * std * std));
 	printf(" %f \n", p1_f);*/
 	
-	float p = (float)y * (x4_f * x3_f * x1_f * x2_f)/(x1 * x2 * x3 * x4);
+	/*float p = (float)y * (x4_f * x3_f * x1_f * x2_f)/(x1 * x2 * x3 * x4);
 	
 	if(p >= 1) {
 		printf(RED"\n Alert : High Risk Transaction Detected  \n");
@@ -1460,7 +1462,81 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	}
 	
 	printf(YELLOW"The probability that this transaction is fraudulent is \n");
-	printf(YELLOW" %f ", p);
+	printf(YELLOW" %f ", p);*/
+	
+	float pnf, pf;
+	if(zscore == 1) {
+		
+		x1_f = (float)(amt_cat.z1f + 1)/(counts[1] + 3);
+		x1 = (float)(amt_cat.z1 + 1)/(total_nf + 3);
+	}
+	
+	else if(zscore == 2) {
+		
+		x1_f = (float)(amt_cat.z2f + 1)/(counts[1] + 3);
+		x1 = (float)(amt_cat.z2 + 1)/(total_nf + 3);
+	}
+	
+	else {
+		
+		x1_f = (float)(amt_cat.z3f + 1)/(counts[1] + 3);
+		x1 = (float)(amt_cat.z3 + 1)/(total_nf + 3);
+	}
+	
+	//x2: 
+	if(c == 'i') {
+		x2_f = (float)(loc_cat.fin + 1)/(counts[1] + 2);
+		x2 = (float)(loc_cat.in + 1)/(total_nf + 2);
+	}
+	
+	else {
+	
+		x2_f = (float)(loc_cat.fout + 1)/(counts[1] + 2);
+		x2 = (float)(loc_cat.out + 1)/(total_nf + 2);
+	}
+	
+	//x3 
+	if(tim == 'o') {
+		
+		x3_f = (float)(time_cat.odf + 1)/(counts[1] + 3);
+		x3 = (float)(time_cat.od + 1)/(total_nf + 3);	
+	}
+	
+	else if(tim == 'd') {
+		
+		x3_f = (float)(time_cat.df + 1)/(counts[1] + 3);
+		x3 = (float)(time_cat.d + 1)/(total_nf + 3);
+	}
+	
+	else {
+		x3_f = (float)(time_cat.nf + 1)/(counts[1] + 3);
+		x3 = (float)(time_cat.n + 1)/(total_nf + 3);
+	}
+	
+	//x4 
+	if(status == 's' || status == 'S') {
+		x4_f = (float)(st_cat.sf + 1)/(counts[1] + 2);
+		x4 = (float)(st_cat.s + 1)/(total_nf + 2);
+	}
+	
+	else {
+		x4_f = (float)(st_cat.ff + 1)/(counts[1] + 2);
+		x4 = (float)(st_cat.f + 1)/(total_nf + 2); 
+	}
+	
+	pnf = x * x1 * x2 * x3 * x4;
+	pf = y * x1_f * x2_f * x3_f * x4_f;
+	float p = pnf + pf;
+	pnf = pnf / p;
+	pf = pf / p;
+	
+	if (pnf > pf) {
+		printf("non fraud\n");
+	} else {
+		printf("fraud\n");
+	}
+	
+	printf("%.2f %.2f", pnf, pf);
 	
 	return;
 }
@@ -1472,7 +1548,13 @@ void detectFraud(item *endUser) {
 	struct tm t;
 	float amount;
 	
-	FILE *fp = fopen("recent.txt", "r");
+	char *fileName = (char*)malloc(sizeof(char)*40);
+	
+	strcpy(fileName, endUser->client.name);
+	strcat(fileName, "Recent.txt");
+		    
+	
+	FILE *fp = fopen(fileName, "r");
 	char *line;
 	line = getLine(&fp);
 	
@@ -1494,7 +1576,6 @@ void detectFraud(item *endUser) {
 		if(strcmp(line, "") == 0) {
 			break;
 		}
-		
 		
 		char* token = strtok(line, " "); // Get the first token (amount)
 		if (token != NULL) {
@@ -1520,6 +1601,7 @@ void detectFraud(item *endUser) {
 		printf(CYAN"\n-----------------------\n");
 		printf(CYAN"\n For Transaction amount : %f at time %d:%d:%d\n", amount, t.tm_hour, t.tm_min, t.tm_sec);
 		
+		
 		if(counts[1] != 0) {
 			TrainModel(endUser, location, t, amount, status[0], time_cat, amt_cat, loc_cat, st_cat, counts);
 		}
@@ -1544,6 +1626,7 @@ void detectFraud(item *endUser) {
 				printf(CYAN"\n No risk detected\n");
 			}	
 		}
+		free(line);
 	}
 	
 	free(line);
