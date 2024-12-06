@@ -6,7 +6,8 @@
 * Initializing the linked list and the bst.  
 * Functions : 
 */
-
+#include <SDL2/SDL.h>  // Ensure SDL2 is included here for SDL_Renderer
+#include <SDL2/SDL_ttf.h>
 #define MAPSIZE 11
 #define RESET "\033[0m"
 #define RED "\033[31m"
@@ -16,8 +17,6 @@
 #define WIDTH 800
 #define HEIGHT 600
 #define epsilon 1e-6
-
-#define Gauss_constant 0.3990
 
 typedef struct countLoc{
 	int fin;
@@ -77,7 +76,7 @@ typedef struct location {
 
 typedef struct node {
 
-	int transaction_id[12];
+	char transaction_id[36];
 	date date_of_payment;
 	struct tm time_of_payment;
 	location payment_place;
@@ -159,7 +158,7 @@ int checkUser(Map *map, long int no, char *pass);
 
 void init_dll(dll *list);
 
-node* createNode(int transaction_id, date payment_date, struct tm payment_time, location payment_place, int zip_code, float amount, char status); 
+node* createNode(char *id, date payment_date, struct tm payment_time, location payment_place, int zip_code, float amount, char status);
 
 void insertEnd(dll* list, node* newNode);
 
@@ -209,11 +208,13 @@ void fraudAlert(dll list, item *endUser);
 
 char timeOfDay(struct tm t);
 
-void TrainModel(item *endUser, char *country, struct tm t, float at, char status);
+void TrainModel(item *endUser, char *country, struct tm t, float at, char status, countTime time_cat, countAmt amt_cat, countLoc loc_cat, countStatus st_cat, int *counts);
 
 void detectFraud(item *endUser);
 
 void display_graph(item *endUser);
+
+void drawYAxisLabels(SDL_Renderer *renderer, float minAmount, float maxAmount);
 
 void countAmtUpdate(countAmt *amt_cat, float z, int isFraud);
 
@@ -232,3 +233,5 @@ void FindFrequency(item *endUser, countTime *time, countAmt* amt, countStatus *s
 float MeanAmt(node *head);
 
 float dev(node *head, float mean);
+
+item *find(Map *map, long int no);

@@ -5,6 +5,7 @@
 #include <string.h>
 #include<math.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 char *getLine(FILE **fp) {
 	
@@ -176,6 +177,29 @@ char *checkPass(char *input) {
     return line; // Remember to free this memory after use in checkUser
 }
 
+item *find(Map *map, long int no) {
+	
+    int idx = hashfunction(no);
+    int i = 0;
+    while(i < MAPSIZE) {
+    	
+    	unsigned int probeIndex = (idx + i * i) % map->size;
+    	
+    	if (map->array[probeIndex] == NULL) {
+            break;  // User not found
+        }
+	
+	item *currentItem = map->array[probeIndex];
+	if(currentItem->client.cardNo == no) {
+		return currentItem;
+	}
+	
+	i++;
+    }
+
+    return NULL; 
+}
+
 int checkUser(Map *map, long int no, char *pass) {
     
     int idx = hashfunction(no);
@@ -205,7 +229,6 @@ int checkUser(Map *map, long int no, char *pass) {
             	}
 	}
 	
-	
 	i++;
     }
 
@@ -218,10 +241,10 @@ void init_dll(dll *list) {
 	list->end = NULL;
 }
 
-node* createNode(int transaction_id, date payment_date, struct tm payment_time, location payment_place, int zip_code, float amount, char status) {
+node* createNode(char *id, date payment_date, struct tm payment_time, location payment_place, int zip_code, float amount, char status) {
     
     node* newNode = (node*)malloc(sizeof(node));
-    newNode->transaction_id[0] = transaction_id;
+    strcpy(newNode->transaction_id, id);
     newNode->date_of_payment = payment_date;
     newNode->time_of_payment = payment_time;
     newNode->payment_place = payment_place;
@@ -264,7 +287,9 @@ void readCsv(dll *list, FILE **fp) {
 		}
 		
 		char *token = strtok(line, ",");
-		int transaction_id = atoi(token);
+		char id[20];
+		strncpy(id, token, sizeof(id) - 1);
+		id[sizeof(id) - 1] = '\0'; // Ensure null-termination
 		
 		// Date
 		token = strtok(NULL, ",");
@@ -304,7 +329,7 @@ void readCsv(dll *list, FILE **fp) {
 		token = strtok(NULL, ",");
         	char status = token[0];
         	
-        	node* newNode = createNode(transaction_id, payment_date, payment_time, payment_place, zip_code, amount, status);
+        	node* newNode = createNode(id, payment_date, payment_time, payment_place, zip_code, amount, status);
         	insertEnd(list, newNode);
         	
         	free(line);
@@ -534,6 +559,7 @@ int getInput(int num, dll list, item *endUser) {
 	return 1;
 }
 
+
 void drawLineGraph(SDL_Renderer *renderer, dll list) {
     
     if (list.head == NULL) {
@@ -580,7 +606,6 @@ void drawLineGraph(SDL_Renderer *renderer, dll list) {
     }
 }
 
-// Function to draw axis
 void drawAxis(SDL_Renderer *renderer) {
    
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // Black color
@@ -882,6 +907,7 @@ int is_location_anomaly(location current, location last, location home) {
 void fraudAlert(dll list, item *endUser) {
 	
 	node *tmp = list.head;
+	int count = 0;
 	while(tmp != NULL) {
 		
 		/* A Z-score standardizes the comparison of individual transaction amounts by showing how many standard deviations 
@@ -901,7 +927,8 @@ void fraudAlert(dll list, item *endUser) {
 		 
 		if(fabs(zscore) >= 3 || isodd == 1 || multipleFailed == 1 || frequent_payments >= 3 || diff_loc == 1) {
 			
-			printf(RED"Transaction id : %d \n", tmp->transaction_id[0]);
+			count++;
+			printf(RED"Transaction id : %s \n", tmp->transaction_id);
 			printf(RED"%d-%d-%d at ", tmp->date_of_payment.day, tmp->date_of_payment.month, tmp->date_of_payment.year);
 			printf(RED"%d:%d:%d \n", tmp->time_of_payment.tm_hour, tmp->time_of_payment.tm_min, tmp->time_of_payment.tm_sec);
 			
@@ -935,7 +962,12 @@ void fraudAlert(dll list, item *endUser) {
 		
 		tmp = tmp->next;
 	}
-
+	
+	if(count == 0) {
+		printf("\nBased on the analysis of your transaction data history, no fraudulent activity has been detected for the recent ones. All transactions appear normal and secure.\n");
+		
+	}
+	
 	return;
 }
 
@@ -1174,13 +1206,14 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 	
 }
 
-void TrainModel(item *endUser, char *country, struct tm t, float at, char status) {
 
-	int *counts = flag(endUser);
-	float y = (float)counts[1]/counts[0]; // Cast counts[1] to float before division
+void TrainModel(item *endUser, char *country, struct tm t, float at, char status, countTime time_cat, countAmt amt_cat, countLoc loc_cat, countStatus st_cat, int *counts) {
+
 	float zscore = (at - endUser->mean)/(endUser->stdDev);
 	char c;
 	char tim;
+	
+	float y = (float)counts[1]/counts[0]; 
 	
 	// x1
 	if(fabs(zscore) <= 1.5) {
@@ -1212,12 +1245,6 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		tim = 'n';
 	}
 	
-	countTime time_cat = {0,0,0,0,0,0,0,0};
-	countAmt amt_cat = {0,0,0,0,0,0,0,0};
-	countLoc loc_cat = {0,0,0,0,0,0};
-	countStatus st_cat = {0,0,0,0,0,0};
-	
-	findFreq(endUser, &amt_cat, &loc_cat, &time_cat, &st_cat);
 	
 	float x1, x2, x3, x4;
 	float x1_f, x2_f, x3_f, x4_f;
@@ -1427,14 +1454,12 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	
 	float p = (float)y * (x4_f * x3_f * x1_f * x2_f)/(x1 * x2 * x3 * x4);
 	
-	printf(YELLOW"\n---------------------------------------\n");
-	
 	if(p >= 1) {
 		printf(RED"\n Alert : High Risk Transaction Detected  \n");
 		return;
 	}
 	
-	printf(YELLOW"\n %f %f %f %f \n", x1_f, x2_f, x3_f, x4_f);
+	printf(YELLOW"The probability that this transaction is fraudulent is \n");
 	printf(YELLOW" %f ", p);
 	
 	return;
@@ -1450,6 +1475,17 @@ void detectFraud(item *endUser) {
 	FILE *fp = fopen("recent.txt", "r");
 	char *line;
 	line = getLine(&fp);
+	
+	countTime time_cat = {0,0,0,0,0,0,0,0};
+	countAmt amt_cat = {0,0,0,0,0,0,0,0};
+	countLoc loc_cat = {0,0,0,0,0,0};
+	countStatus st_cat = {0,0,0,0,0,0};
+	
+	int *counts = flag(endUser);
+	
+	findFreq(endUser, &amt_cat, &loc_cat, &time_cat, &st_cat);
+	
+	if(counts[1] == 0) printf(CYAN"\nAny previously flagged transactions doesnt exist, hence could not handle the probability!\n");
 	
 	while(1) {
 		
@@ -1481,11 +1517,34 @@ void detectFraud(item *endUser) {
 			strcpy(status, token); // Copy to status
 		}
 		
-		printf("\n-----------------------\n");
-		TrainModel(endUser, location, t, amount, status[0]);
+		printf(CYAN"\n-----------------------\n");
+		printf(CYAN"\n For Transaction amount : %f at time %d:%d:%d\n", amount, t.tm_hour, t.tm_min, t.tm_sec);
+		
+		if(counts[1] != 0) {
+			TrainModel(endUser, location, t, amount, status[0], time_cat, amt_cat, loc_cat, st_cat, counts);
+		}
+		
+		else {
+			float zscore = (amount - endUser->mean)/(endUser->stdDev);
+			int isodd = is_odd_hour(t);
+				
+			if(fabs(zscore) > 3 || isodd == 1) {
+				printf(RED"\nPotential Fraud Alert \n");
+				
+				if(fabs(zscore) > 3) {
+					printf(RED"Outlier detected : \n amount (zscore = %f) : %f \n", zscore, amount);
+				}
+				
+				if(isodd == 1) {
+					printf(RED"Transaction at odd hour, %d:%d:%d\n", t.tm_hour, t.tm_min, t.tm_sec);
+				}
+			}
+			
+			else {
+				printf(CYAN"\n No risk detected\n");
+			}	
+		}
 	}
 	
 	free(line);
-}	
-
-
+}

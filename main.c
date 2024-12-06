@@ -48,17 +48,17 @@ int main() {
 		    
 		    printf(CYAN "Login successful.\n");
 		    
-		    item *endUser = m->array[hashfunction(no)];
+		    item *endUser = find(m, no);
 		    printf(YELLOW"\nName : %s\n",endUser->client.name);
 		    printf(YELLOW"\nCard No: %s\n",num);
 		    printf(YELLOW"\nCVV : %d\n",endUser->client.cvv);
 		    
-		    //char *fileName = (char*)malloc(sizeof(char)*20);
-		    //strcpy(fileName, endUser->client.name);
+		    char *fileName = (char*)malloc(sizeof(char)*20);
+		    strcpy(fileName, endUser->client.name);
 		    
-		    //strcat(fileName, ".csv");
+		    strcat(fileName, ".csv");
 		    
-		    fp = fopen("female_urban.csv", "r");
+		    fp = fopen(fileName, "r");
 		    
 		    if(fp == NULL) {
 		    	printf(RED "There was some error in loading the data \n");
