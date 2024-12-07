@@ -1032,285 +1032,163 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 	}
 }
 
-void TrainModel(item *endUser, char *country, struct tm t, float at, char status) {
+void TrainModel(item *endUser, char *country, struct tm t, float at, char status, countTime time_cat, countAmt amt_cat, countLoc loc_cat, countStatus st_cat, int *counts) {
 
-	int *counts = flag(endUser);
-	float y = (float)counts[1] / counts[0]; // Cast counts[1] to float before division
-	float zscore = (at - endUser->mean)/(endUser->stdDev);
+/*
+    Function: TrainModel
+    Purpose: Implements a Naive Bayes classifier to predict whether a credit card transaction is fraudulent or non-fraudulent based on multiple features.
+    
+    Parameters:
+        - item *endUser: Pointer to user-specific transaction statistics (mean, standard deviation).
+        - char *country: The country where the transaction occurred.
+        - struct tm t: The timestamp of the transaction, used to categorize time.
+        - float at: The amount of the transaction.
+        - char status: The transaction status ('s' for successful, others for failed).
+        - countTime time_cat: Struct holding counts for time categories (morning, evening, odd-hours).
+        - countAmt amt_cat: Struct holding counts for Z-score categories (low, moderate, high).
+        - countLoc loc_cat: Struct holding counts for location categories (domestic(India), international).
+        - countStatus st_cat: Struct holding counts for status categories (success, failure).
+        - int *counts: Array where counts[0] is the total number of transactions and counts[1] is the total number of fraudulent transactions.
+    
+    Returns:
+        - Prints whether the transaction is "fraud" or "non fraud" and the probabilities of each.
+    */
+
+	// Naive Bayes is based on the formula:
+        // P(Fraud|Features) ∝ P(Fraud) * P(Feature_1|Fraud) * P(Feature_2|Fraud) * ...
+        // Here, Features include Z-score (transaction amount), location, time of transaction, and transaction status.
+	
+	// Step 1: Calculate the Z-score to determine how unusual the transaction amount is.
+	float zscore = (at - endUser->mean)/(endUser->stdDev); // Z-Score formula: Z = (x - μ) / σ
 	char c;
 	char tim;
 	
+	// Compute the probability of non-fraudulent (pnf) and fraudulent (pf) transactions:
+    	// `y` = P(Fraud), `x` = P(Non-Fraud).
+	float y = (float)counts[1]/counts[0];  // y = P(Fraud) = Total fraudulent transactions / Total transactions
+	float x = 1 - y; //probability of non fraud transaction // x = P(Non-Fraud) = 1 - P(Fraud)
+	int total_nf = counts[0] - counts[1];
+	
 	// x1
-	if(fabs(zscore) <= 1) {
-		zscore = 1;	
+	// Step 2: Categorize the Z-score into three levels based on thresholds (low, moderate, high deviation).
+	if(fabs(zscore) <= 1.5) {
+		zscore = 1;	// Low deviation.
 	}
-	else if(fabs(zscore) <= 2) {
-		zscore = 2;
+	else if(fabs(zscore) <= 3) {
+		zscore = 2;     // Moderate deviation.
 	}
 	else {
-		zscore = 3;
+		zscore = 3;     // High deviation.
 	}
 	
 	// x2
+	// Step 3: Categorize the location as domestic or international.
 	if(strcmp(country, "India") == 0) {
-		c = 'i';
+		c = 'i'; //India
 	}
-	
 	else {
-		c = 'n';
+		c = 'n'; //Non-India
 	}
 	
-	// x3
-	if(t.tm_hour < 6 || t.tm_hour > 11) {
-		tim = 'o';
+	//x3
+	if(t.tm_hour < 6 || t.tm_hour > 22) {
+		tim = 'o'; //odd hours 
 	}
 	else if(t.tm_hour > 6 && t.tm_hour < 16) {
-		tim = 'd';
+		tim = 'e'; //evening
 	}
-	
 	else {
-		tim = 'n';
+		tim = 'm'; //morning
 	}
-	
-	countTime time_cat = {0,0,0,0,0,0,0,0};
-	countAmt amt_cat = {0,0,0,0,0,0,0,0};
-	countLoc loc_cat = {0,0,0,0,0,0};
-	countStatus st_cat = {0,0,0,0,0,0};
-	
-	findFreq(endUser, &amt_cat, &loc_cat, &time_cat, &st_cat);
-	
-	float x1, x2, x3, x4;
-	float x1_f, x2_f, x3_f, x4_f;
-	
-	
-	// x1;
+	// Initialize conditional probabilities for each feature
+	float x1, x2, x3, x4; // For non-fraud.
+	float x1_f, x2_f, x3_f, x4_f;	// For fraud.
+	float pnf, pf;
+
+	  // Step 5: Calculate conditional probabilities for Z-score (amount deviation).
 	if(zscore == 1) {
-		x1_f = (float)amt_cat.z1f/amt_cat.total_f;
-		
-		if(x1_f == 0) {
-			x1_f = (float)(amt_cat.z1f + 1)/(amt_cat.total_f + 3);
-		}
-		
-		else if(x1_f == 1) {
-			x1_f = (float)(1 - epsilon);
-		}	
-		
-		x1 = (float)(amt_cat.z1f + amt_cat.z1)/amt_cat.total;
-		
-		if(x1 == 0) {
-			x1 = (float)(amt_cat.z1f + amt_cat.z1 + 1)/(amt_cat.total + 3);
-		}
-		
-		else if(x1 == 1) {
-			x1 = (float)(1 - epsilon);
-		}
+		  
+		x1_f = (float)(amt_cat.z1f + 1)/(counts[1] + 3); // P(Z1|Fraud)
+		x1 = (float)(amt_cat.z1 + 1)/(total_nf + 3); // P(Z1|Non-Fraud)
 	}
 	
 	else if(zscore == 2) {
 		
-		x1_f = (float)amt_cat.z2f/amt_cat.total_f;
-		
-		if(x1_f == 0) {
-			x1_f = (float)(amt_cat.z2f + 1)/(amt_cat.total_f + 3);
-		}
-		
-		else if(x1_f == 1) {
-			x1_f = (float)(1 - epsilon);
-		}
-		
-		x1 = (float)(amt_cat.z2f + amt_cat.z2)/amt_cat.total;
-		
-		if(x1 == 0) {
-			x1 = (float)(amt_cat.z2f + amt_cat.z2 + 1)/(amt_cat.total + 3);
-		}
-		
-		else if(x1 == 1) {
-			x1 = (float)(1 - epsilon);
-		}
+		x1_f = (float)(amt_cat.z2f + 1)/(counts[1] + 3); // P(Z2|Fraud)
+		x1 = (float)(amt_cat.z2 + 1)/(total_nf + 3); // P(Z2|Non-Fraud)
 	}
 	
 	else {
-		x1_f = (float)amt_cat.z3f/amt_cat.total_f;
 		
-		if(x1_f == 0) {
-			x1_f = (float)(amt_cat.z3f + 1)/(amt_cat.total_f + 3);
-		}
-		
-		else if(x1_f == 1) {
-			x1_f = (float)(1 - epsilon);
-		}
-		
-		x1 = (float)(amt_cat.z3f + amt_cat.z3)/amt_cat.total;
-		
-		if(x1 == 0.00) {
-			x1 = (float)(amt_cat.z3f + amt_cat.z3 + 1)/(amt_cat.total + 3);
-		}
-		
-		else if(x1 == 1) {
-			x1 = (float)(1 - epsilon);
-		}
+		x1_f = (float)(amt_cat.z3f + 1)/(counts[1] + 3); // P(Z3|Fraud)
+		x1 = (float)(amt_cat.z3 + 1)/(total_nf + 3); // P(Z3|Non-Fraud)
 	}
 	
-	// x2: 
+	//x2: 
+	// Step 6: Calculate conditional probabilities for location.
 	if(c == 'i') {
-		x2_f = (float)loc_cat.fin/loc_cat.total_f;
-		
-		if(x2_f == 0) {
-			x2_f = (float)(loc_cat.fin + 1)/(loc_cat.total_f + 2);
-		}
-		
-		else if(x2_f == 1) {
-			x2_f = (float)(1 - epsilon);
-		}
-		
-		x2 = (float)(loc_cat.fin + loc_cat.in)/amt_cat.total;
-		
-		if(x2 == 0) {
-			x2 = (float)(loc_cat.fin + loc_cat.in + 1)/(amt_cat.total + 2);
-		}
-		
-		else if(x2 == 1) {
-			x2 = (float)(1 - epsilon);
-		}
+		x2_f = (float)(loc_cat.fin + 1)/(counts[1] + 2); // P(India|Fraud)
+		x2 = (float)(loc_cat.in + 1)/(total_nf + 2); // P(India|Non-Fraud)
 	}
 	
 	else {
-		x2_f = (float)loc_cat.fout/loc_cat.total_f;
 	
-		if(x2_f == 0) {
-			x2_f = (float)(loc_cat.fout + 1)/(loc_cat.total_f + 2);
-		}	
-		
-		else if(x2_f == 1) {
-			x2_f = (float)(1 - epsilon);
-		}
-		
-		x2 = (float)(loc_cat.fout + loc_cat.out)/amt_cat.total;
-		
-		if(x2 == 0) {
-			x2 = (float)(loc_cat.fout + loc_cat.out + 1)/(amt_cat.total + 2);
-		}
-		
-		else if(x2 == 1) {
-			x2 = (float)(1 - epsilon);
-		}	
+		x2_f = (float)(loc_cat.fout + 1)/(counts[1] + 2); // P(Outside|Fraud)
+		x2 = (float)(loc_cat.out + 1)/(total_nf + 2); // P(Outside|Non-Fraud)
 	}
 	
-	// x3 
+	//x3 
+	// Step 7: Calculate conditional probabilities for time.
 	if(tim == 'o') {
-		x3_f = (float)time_cat.odf/time_cat.total_f;
 		
-		if(x3_f == 0) {
-			x3_f = (float)(time_cat.odf + 1)/(time_cat.total_f + 3);
-		}
-		
-		else if(x3_f == 1) {
-			x3_f = (float)(1 - epsilon);
-		}
-		
-		x3 = (float)(time_cat.odf + time_cat.od)/time_cat.total;
-		
-		if(x3 == 0) {
-			x3 = (float)(time_cat.odf + time_cat.od + 1)/(time_cat.total + 3);
-		}
-		else if(x3 == 1) {
-			x3 = (float)(1 - epsilon);
-		}	
+		x3_f = (float)(time_cat.odf + 1)/(counts[1] + 3); // P(Odd-Hours|Fraud)
+		x3 = (float)(time_cat.od + 1)/(total_nf + 3);	// P(Odd-Hours|Non-Fraud)
 	}
 	
 	else if(tim == 'd') {
-		x3_f = (float)time_cat.df/time_cat.total_f;
 		
-		if(x3_f == 0) {
-			x3_f = (float)(time_cat.df + 1)/(time_cat.total_f + 3);
-		}
-		
-		else if(x3_f == 1) {
-			x3_f = (float)(1 - epsilon);
-		}
-		
-		x3 = (float)(time_cat.df + time_cat.d)/time_cat.total;
-		
-		if(x3 == 0) {
-			x3 = (float)(time_cat.df + time_cat.d + 1)/(time_cat.total + 3);
-		}
-		else if(x3 == 1) {
-			x3 = (float)(1 - epsilon);
-		}
+		x3_f = (float)(time_cat.df + 1)/(counts[1] + 3); // P(day|Fraud)
+		x3 = (float)(time_cat.d + 1)/(total_nf + 3); // P(day|Non-Fraud)
 	}
 	
 	else {
-		x3_f = (float)time_cat.nf/time_cat.total_f;
-		
-		if(x3_f == 0) {
-			x3_f = (float)(time_cat.nf + 1)/(time_cat.total_f + 3);
-		}
-		
-		else if(x3_f == 1) {
-			x3_f = (float)(1 - epsilon);
-		}
-		
-		x3 = (float)(time_cat.nf + time_cat.n)/time_cat.total;
-		
-		if(x3 == 0) {
-			x3 = (float)(time_cat.nf + time_cat.n + 1)/(time_cat.total + 3);
-		}
-		
-		else if(x3 == 1) {
-			x3 = (float)(1 - epsilon);
-		}
+		x3_f = (float)(time_cat.nf + 1)/(counts[1] + 3); // P(Night|Fraud)
+		x3 = (float)(time_cat.n + 1)/(total_nf + 3); //P(Night|Non-Fraud)
 	}
 	
-	// x4 
+	//x4 
+	// Step 8: Calculate conditional probabilities for transaction status.
 	if(status == 's' || status == 'S') {
-		x4_f = st_cat.sf/st_cat.total_f;
-		
-		if(x4_f == 0) {
-			x4_f = (float)(st_cat.sf + 1)/(st_cat.total_f + 2);
-		}
-		
-		else if(x4_f == 1) {
-			x4_f = (float)(1 - epsilon);
-		}
-		
-		x4 = (float)(st_cat.sf + st_cat.s)/st_cat.total; 
-		
-		if(x4 == 0) {
-			x4 = (float)(st_cat.sf + st_cat.s + 1)/(st_cat.total + 2);
-		}
-		
-		else if(x4 == 1) {
-			x4 = (float)(1 - epsilon);
-		}	
+		x4_f = (float)(st_cat.sf + 1)/(counts[1] + 2); // P(Success|Fraud)
+		x4 = (float)(st_cat.s + 1)/(total_nf + 2); // P(Success|Non-Fraud)
 	}
 	
 	else {
-		x4_f = (float)st_cat.ff/st_cat.total_f;
-		
-		if(x4_f == 0) {
-			x4_f = (float)(st_cat.ff + 1)/(st_cat.total_f + 2);
-		}
-		
-		else if(x4_f == 1) {
-			x4_f = (float)(1 - epsilon);
-		}	
-		
-		x4 = (float)(st_cat.ff + st_cat.f)/ st_cat.total; 
-		
-		if(x4 == 0) {
-			x4 = (float)(st_cat.ff + st_cat.f + 1)/(st_cat.total + 2); 
-		}
-		
-		else if(x4 == 1) {
-			x4 = (float)(1 - epsilon);
-		}
+		x4_f = (float)(st_cat.ff + 1)/(counts[1] + 2); // P(Fail|Fraud)
+		x4 = (float)(st_cat.f + 1)/(total_nf + 2); // P(Fail|Non-Fraud)
 	}
-	 
-	float p = y *(x4_f * x3_f * x2_f * x1_f)/(x1 * x2 * x3 * x4); 	
-	printf(" %f ", p);
+	
+	// Step 9: Calculate posterior probabilities for fraud (pf) and non-fraud (pnf).
+	pnf = x * x1 * x2 * x3 * x4; // P(Non-Fraud|Features)
+	pf = y * x1_f * x2_f * x3_f * x4_f; // P(Fraud|Features)
+	
+	// Normalize the probabilities (to ensure their sum equals 1).
+	float p = pnf + pf; 
+	pnf = pnf / p;
+	pf = pf / p;
+
+	// Step 10: Classification decision based on probabilities.
+	if (pnf > pf) {
+		printf("non fraud\n");
+	} else {
+		printf("fraud\n");
+	}
+	
+	printf("%.2f %.2f", pnf, pf);
 	
 	return;
 }
+
 
 void detectFraud(item *endUser) {
 	
