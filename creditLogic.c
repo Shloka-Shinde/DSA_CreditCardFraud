@@ -584,8 +584,8 @@ float calculateStandardDeviation(dll *list) {
 
 void printMenu() {
 
-	printf("\n------------------------------------------MENU-------------------------------------------------\n");
-	printf(CYAN"1. Recent transactions \n");
+	printf(CYAN"\n------------------------------------------MENU-------------------------------------------------\n");
+	printf(CYAN"\n1. Recent transactions \n");
 	printf(CYAN"2. See transaction history (recent to first) \n");
 	printf(CYAN"3. See transaction history (oldest to newwest) \n");
 	printf(CYAN"4. Transactions done on particular date \n");
@@ -594,7 +594,6 @@ void printMenu() {
 	printf(CYAN"7. Show flagged transactions \n");
 	printf(CYAN"8. Search for potential frauds from recent transaction\n");
 	printf(CYAN"9. Exit Program \n");
-
 }
 
 int getInput(int num, dll list, item *endUser) {
@@ -621,7 +620,10 @@ int getInput(int num, dll list, item *endUser) {
 			printf("\n Enter the date dd mm yyyy\n");
 			date target;
 			scanf("%d %d %d", &(target.day), &(target.month), &(target.year));
-			find_transactions_by_date(endUser->root, target);
+			int count = 0;
+			find_transactions_by_date(endUser->root, target, &count);
+			
+			if(count == 0) printf(YELLOW"\n No transactions were found for this date.\n");
 			break;
 		}
 		
@@ -804,7 +806,7 @@ void RecentToLast(dll list) {
 			printf(" Status : Failed\n");
 			
 		
-		printf("----------------------------------------- \n");
+		printf("\n----------------------------------------- \n");
 		temp = temp->prev;
 	} 
 }
@@ -827,7 +829,7 @@ void oldTonew(dll list) {
 			printf(" Status : Failed\n");
 			
 		
-		printf("----------------------------------------- \n");
+		printf("\n----------------------------------------- \n");
 		temp = temp->next;
 	}
 	
@@ -857,23 +859,24 @@ int compareDate(date d1, date d2) {
  * O(N).
  * Best Case: 
 */
-void find_transactions_by_date(transaction *root, date target_date) {
+void find_transactions_by_date(transaction *root, date target_date, int *count) {
     
     if (root == NULL)
         return;
 
     if (compareDate(target_date, root->date_of_payment) == -1) {
-        find_transactions_by_date(root->left, target_date);
+        find_transactions_by_date(root->left, target_date, count);
     }
   
     else if (compareDate(target_date, root->date_of_payment) == 1) {
-        find_transactions_by_date(root->right, target_date);
+        find_transactions_by_date(root->right, target_date, count);
     }
   
     else if(compareDate(target_date, root->date_of_payment) == 0){
         
-        find_transactions_by_date(root->left, target_date);
+        find_transactions_by_date(root->left, target_date, count);
         
+        (*count) += 1;
         printf("Transaction : \n");
 	printf("%d/%d/%d at %s at %d:%d:%d \n", root->date_of_payment.day, root->date_of_payment.month, root->date_of_payment.year, root->payment_place.city, root->time_of_payment.tm_hour, root->time_of_payment.tm_min, root->time_of_payment.tm_sec );
         
@@ -886,7 +889,7 @@ void find_transactions_by_date(transaction *root, date target_date) {
 		printf(" Status : Failed\n");
         
         
-        find_transactions_by_date(root->right, target_date);
+        find_transactions_by_date(root->right, target_date, count);
         
     }
     
@@ -896,12 +899,13 @@ void find_transactions_by_date(transaction *root, date target_date) {
 void find_transactions_byLocation(dll list, location place) {
 	
 	node *temp = list.head;
-	
+	int count = 0;
+
 	while(temp != NULL) {
 		
 		if(strcmp(temp->payment_place.country, place.country) == 0  && strcmp(temp->payment_place.state, place.state) == 0 && strcmp(temp->payment_place.city, place.city) == 0)  {
 		
-			
+			count++;
 			printf("Transaction : \n");
 			printf("%d/%d/%d at %s at %d:%d:%d \n", temp->date_of_payment.day, temp->date_of_payment.month, temp->date_of_payment.year, temp->payment_place.city, temp->time_of_payment.tm_hour, temp->time_of_payment.tm_min, temp->time_of_payment.tm_sec );
 			
@@ -916,6 +920,10 @@ void find_transactions_byLocation(dll list, location place) {
 		
 		
 		temp = temp->next;
+	}
+	
+	if(count == 0) {
+		printf(YELLOW"\nNo transactions were found for this location\n");
 	}
 }
 

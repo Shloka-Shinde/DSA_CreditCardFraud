@@ -193,7 +193,7 @@ int is_odd_hour(struct tm time);
 
 int multiple_failed_transactions(node *temp); 
 
-void find_transactions_by_date(transaction *root, date target_date);
+void find_transactions_by_date(transaction *root, date target_date, int *count);
 
 void find_transactions_byLocation(dll list, location place);
 
