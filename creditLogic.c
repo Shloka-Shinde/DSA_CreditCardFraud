@@ -1054,7 +1054,12 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
         - Prints whether the transaction is "fraud" or "non fraud" and the probabilities of each.
     */
 
-	// Naive Bayes is based on the formula:
+	/*The Naive Bayes classifier is based on Bayes’ Theorem:
+	P(A∣B)=  (P(B∣A)⋅P(A))/ P(B)
+
+	A: The class (Fraud or Non-Fraud).
+	B: The observed features (Amount, Location, Time, Status). */
+	
         // P(Fraud|Features) ∝ P(Fraud) * P(Feature_1|Fraud) * P(Feature_2|Fraud) * ...
         // Here, Features include Z-score (transaction amount), location, time of transaction, and transaction status.
 	
@@ -1104,6 +1109,8 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	float x1, x2, x3, x4; // For non-fraud.
 	float x1_f, x2_f, x3_f, x4_f;	// For fraud.
 	float pnf, pf;
+
+	//Laplace smoothing is applied to avoid zero probabilities.
 
 	  // Step 5: Calculate conditional probabilities for Z-score (amount deviation).
 	if(zscore == 1) {
@@ -1178,6 +1185,9 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	pf = pf / p;
 
 	// Step 10: Classification decision based on probabilities.
+	/*Decision Rule: The transaction is classified as fraudulent if 
+	P(Fraud∣Features)>P(Non−Fraud∣Features).
+	*/
 	if (pnf > pf) {
 		printf("non fraud\n");
 	} else {
