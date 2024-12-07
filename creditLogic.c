@@ -7,6 +7,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+
+/*The function reads one character at a time until it encounters a newline or EOF. If the line has nn characters,
+*  the reading process will take O(n).
+*/
 char *getLine(FILE **fp) {
 	
 	char *line = (char*)malloc(sizeof(char)*300);
@@ -27,6 +31,13 @@ char *getLine(FILE **fp) {
 	return line;
 }
 
+/*The function initHashMap initializes and returns a new hash map data structure.
+* Dynamic Allocation of the Hash Map Structure:
+* Time complexity : 
+* Allocating the Map structure: O(1).
+* Allocating the array of item* pointers: O(MAPSIZE).
+* Overall Time Complexity: O(MAPSIZE).
+*/
 Map *initHashMap() {
 	
 	Map *hashmap;
@@ -50,6 +61,11 @@ Map *initHashMap() {
  * The function processes the card number in chunks of 4 digits, mixes the chunks using a prime multiplier (37), 
  * and ensures the resulting hash value fits within the hash table size (MAPSIZE).
  * This approach helps distribute card numbers uniformly across the hash table.
+ * Time complexity : 
+ * If the card number has dd digits, the number of iterations is proportional to ⌈d/4⌉⌈d/4⌉, which simplifies to O(d).
+ * Each operation inside the loop (%, +, *, /) is O(1).
+ * The final modulo operation is O(1).
+ * Overall Time complexity - O(d). 
  */
 
 int hashfunction(long int card_no) {
@@ -73,6 +89,12 @@ int hashfunction(long int card_no) {
  * containing the user's details, including name, card number, CVV, expiry date, address, and password.
  * The function attempts to place the item in the hash table, and if collisions occur, it uses 
  * quadratic probing to find the next available slot within the table.
+ * Load Factor : Number of elements in the map / size of the map ( in this case is 0.4).
+ * With a low load factor, the chance of collisions is significantly reduced. 
+ * Most insertions will occur directly at the computed hash index, making insertion operations faster.
+ * Time Complexity :
+ * Average Case: O(1) for a well-distributed hash function and low load factor.
+ * Worst Case: O(MAPSIZE) if the table is nearly full or the hash function causes clustering.
  */
 
 void enter_users(Map *h, user a) {
@@ -112,7 +134,30 @@ void enter_users(Map *h, user a) {
     	return;		
 }
 
-/* Function: Reads user data from a file and populates the hash map with user details. Uses strtok function to tokenize the string based on delimeter here ',' */
+/* Function: Reads user data from a file and populates the hash map with user details. 
+ * Uses strtok function to tokenize the string based on delimeter here ','.
+ * The function reads one line at a time using getLine(fp). If function contains L lines (and c characters in each line): 
+ * Line parsing using the following functions : 
+ * strtok 
+ * strtol
+ * atoi 
+ * sscanf
+ * strncpy 
+ * Line parsing: O(L⋅(C+K+M⋅F)).
+       Hash map insertion: O(L⋅K).
+
+	The dominant factor depends on CC, KK, and MM, but for practical inputs:
+	Total Time Complexity=O(L⋅(C+K+M⋅F))
+	Total Time Complexity=O(L⋅(C+K+M⋅F))
+
+	Where:
+
+	    L: Number of lines in the file.
+	    C: Average number of characters per line.
+	    K: Length of the card number (fixed for a specific application).
+	    M: Length of the longest string field (e.g., name or address).
+	    F: Number of fields in each line.
+ */
 
 void readUsersData(Map *map, FILE **fp) {
 	
@@ -185,6 +230,10 @@ void readUsersData(Map *map, FILE **fp) {
  * The function then returns the transformed password as a new string.
  * Use Case:
  *  - This function is used for password encryption for storage or validation.
+ * Time complexity : 
+ * Memory Allocation : O(1).
+ * Loop iterates through each character so for n characters, time complexity - O(n).
+ * Overall Time Complexity: O(N), where N is the length of the input string.
  */
     
 char *checkPass(char *input) {
@@ -208,6 +257,13 @@ char *checkPass(char *input) {
     return line; // Remember to free this memory after use in checkUser
 }
 
+/* Time complexity: 
+ * Best Case:
+ * The best-case scenario is when the item is found in the first slot, and no collisions occur, O(1).
+ * Worst Case:
+ * In the worst case, when all the slots are filled with items, the function might need to probe all the slots in the hash map, O(M).
+ * (M is Hashmap size).
+*/
 
 item *find(Map *map, long int no) {
 	
@@ -232,7 +288,17 @@ item *find(Map *map, long int no) {
     return NULL; 
 }
 
-// * This function checks if a user exists in the hash map and if the provided password matches the stored password.
+/* This function checks if a user exists in the hash map and if the provided password matches the stored password.
+ * Time complexity :
+ * Worst-case time complexity: O(M+L).
+ * Best-case time complexity: O(L) (when the user is found in the first probe and no collisions occur).
+
+ * Where:
+
+    M is the size of the hash map (number of slots).
+    L is the length of the password.
+*/
+
 int checkUser(Map *map, long int no, char *pass) {
     
     int idx = hashfunction(no);
@@ -371,6 +437,7 @@ void readCsv(dll *list, FILE **fp) {
 }
 
 /*Purpose :  To create a copy of the linked list, so that this could be used to create a binary search tree.
+ * Time Complexity : O(N), where N is the number of elements in the doubly linked list.
 */
 node *copyList(dll list) {
 	node *temp = list.head;
@@ -399,6 +466,12 @@ node *copyList(dll list) {
 	return dummy.next;
 }	
 
+/* The function findMiddle finds the middle node of a singly linked list, which is typically done using 
+ * the tortoise and hare approach (using two pointers: slow and fast).
+ * it takes half as many iterations to reach the end of the list as the total number of nodes.
+ * The overall Time Complexity is O(N).
+*/
+
 node* findMiddle(node *head) {
     
     if (head == NULL) return NULL;
@@ -419,6 +492,9 @@ node* findMiddle(node *head) {
 
     return slow; // Middle node
 }
+
+/* Time Complexity: O(NlogN), where N is the total number of nodes.
+*/
 
 transaction *sortedToBST(node *head) {
 	
@@ -446,6 +522,8 @@ transaction *sortedToBST(node *head) {
     	
     	return root;
 }
+
+
 
 float calculateMean(dll *list) {
     node *temp = list->head;
@@ -477,13 +555,14 @@ float calculateMean(dll *list) {
 
 /* Function to calculate the standard deviation of transaction amounts
  Formula:
-// Standard Deviation (σ) = sqrt( (1/n) * Σ(xi - μ)^2 )
-// Where:
-// - xi is each individual transaction amount
-// - μ is the mean of all transaction amounts
-// - n is the total number of transactions
-// The function calculates the squared difference between each transaction amount and the mean, 
-// sums these squared differences, and returns the square root of the average squared difference.*/
+ * Standard Deviation (σ) = sqrt( (1/n) * Σ(xi - μ)^2 )
+ * Where:
+ * - xi is each individual transaction amount
+ * - μ is the mean of all transaction amounts
+ * - n is the total number of transactions
+ * The function calculates the squared difference between each transaction amount and the mean, 
+ * sums these squared differences, and returns the square root of the average squared difference.
+*/
 
 float calculateStandardDeviation(dll *list) {
     
@@ -773,6 +852,11 @@ int compareDate(date d1, date d2) {
     return 0;  
 }
 
+/* The time complexity is determined by the number of recursive calls made and 
+ * the depth of the tree. In the worst case, the function might visit every node and perform a constant-time comparison at each node.
+ * O(N).
+ * Best Case: 
+*/
 void find_transactions_by_date(transaction *root, date target_date) {
     
     if (root == NULL)
@@ -869,32 +953,32 @@ int multiple_failed_transactions(node *temp) {
 // Function to check if two transactions occurred within a small time frame (5 minutes)
 
 int is_small_time_frame(struct tm last_time, struct tm current_time) {
-    // Zero out the struct to ensure all fields are initialized
-    last_time.tm_isdst = -1;  // Let mktime handle DST
-    current_time.tm_isdst = -1;
 
-    // Initialize all other fields to zero
-    last_time.tm_mday = 1;   // Set a default day (valid day in tm structure)
-    last_time.tm_mon = 0;     // Set to January (valid month)
-    last_time.tm_year = 100;  // Set a default year (valid)
+	last_time.tm_isdst = -1;  
+	current_time.tm_isdst = -1;
 
-    current_time.tm_mday = 1;   // Set a default day (valid day in tm structure)
-    current_time.tm_mon = 0;     // Set to January (valid month)
-    current_time.tm_year = 100;  // Set a default year (valid)
+	    
+	last_time.tm_mday = 1;   // Set a default day (valid day in tm structure)
+	last_time.tm_mon = 0;     // Set to January (valid month)
+	last_time.tm_year = 100;  // Set a default year (valid)
 
-    // Ensure tm structures are valid before using mktime
-    time_t last_time_t = mktime(&last_time);
-    time_t current_time_t = mktime(&current_time);
+	current_time.tm_mday = 1;   // Set a default day (valid day in tm structure)
+	current_time.tm_mon = 0;     // Set to January (valid month)
+	current_time.tm_year = 100;  // Set a default year (valid)
 
-    // Check if mktime failed
-    if (last_time_t == (time_t) -1 || current_time_t == (time_t) -1) {
-        fprintf(stderr, "Error: mktime failed\n");
-        return 0;  // Return some default value if mktime fails
-    }
 
-    double seconds_diff = difftime(current_time_t, last_time_t);
-    
-    return seconds_diff < 300; // Check if the difference is less than 5 minutes
+	time_t last_time_t = mktime(&last_time);
+	time_t current_time_t = mktime(&current_time);
+
+
+	if (last_time_t == (time_t) -1 || current_time_t == (time_t) -1) {
+		fprintf(stderr, "Error: mktime failed\n");
+		return 0;  // Return some default value if mktime fails
+	}
+
+	double seconds_diff = difftime(current_time_t, last_time_t);
+	    
+	return seconds_diff < 300; // Check if the difference is less than 5 minutes
 }
 
 // Function to detect frequent transactions within a short time frame (5 minutes)
@@ -945,7 +1029,10 @@ int is_location_anomaly(location current, location last, location home) {
 *  Small time window for transaction --- such as large transactions in small time window.
 				     --- Multiple failed transactions in small time window.
 *  Higher transaction amount than usual. 
-*  Other factors include z-score as well.		
+*  Other factors include z-score as well.
+* Time Complexity : 
+* Assuming that the helper functions are efficient and the typical number of consecutive failed or 
+* frequent transactions is small, the overall time complexity of the fraudAlert function is: O(N).	
 */ 
 
 void fraudAlert(dll list, item *endUser) {
@@ -1015,31 +1102,11 @@ void fraudAlert(dll list, item *endUser) {
 	return;
 }
 
-
-char timeOfDay(struct tm t) {
-	
-	char d = '\0';
-	
-	//Check if time is between 6 AM and 4PM
-	if(t.tm_hour >= 6 && t.tm_hour < 16) {
-		d = 'm'; // refers to morning.
-	}
-	
-	//Check if time is between 4Pm and 10PM
-	else if(t.tm_hour >= 16 && t.tm_hour < 22) {
-		d = 'e'; // refers to evening 
-	}
-	
-	else {
-		d = 'o'; // odd hours
-	}
-	
-	return d;
-}
-
 /*This traverses through the list and identifies and flags the transactions as fraud or non fraud. 
 * Uses the same conditions to flag the transactions as used in the function fraudAlert.
+* Time Complexity : O(N).
 */
+
 int *flag(item *endUser) {
 	
 	node *temp = endUser->list.head;
@@ -1087,7 +1154,8 @@ int *flag(item *endUser) {
 	return freq;
 }
 
-
+/* Time Complexity : O(N).
+*/
 void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *time_cat, countStatus *st_cat) {
 	
 	node *temp = endUser->list.head;
@@ -1110,7 +1178,7 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 			tim = 'o'; // odd hours
 		}
 		else if(t.tm_hour > 6 && t.tm_hour < 16) {
-			tim = 'd'; //morning or day 
+			tim = 'm'; //morning or day 
 		}
 		
 		else {
@@ -1166,7 +1234,7 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 				
 			}
 			
-			else if(tim == 'd') {
+			else if(tim == 'm') {
 				time_cat->df += 1;
 				time_cat->total_f += 1;
 				time_cat->total += 1;
@@ -1236,7 +1304,7 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 				time_cat->total += 1;
 			}
 			
-			else if(tim == 'd') {
+			else if(tim == 'm') {
 				time_cat->d += 1;
 				time_cat->total += 1;
 			}
@@ -1343,7 +1411,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		tim = 'o';
 	}
 	else if(t.tm_hour > 6 && t.tm_hour < 16) {
-		tim = 'd';
+		tim = 'm';
 	}
 	else {
 		tim = 'e';
@@ -1355,6 +1423,10 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	float pnf, pf;
 	
 	//Laplace smoothing is applied to avoid zero probabilities.
+	/* Laplace smoothing prevents zero probabilities by adding 1 to feature category counts. 
+ 	This ensures no category is excluded,
+ 	avoiding a zero posterior probability that would make classification impossible. */
+	
 	// Step 5: Calculate conditional probabilities for Z-score (amount deviation).
 	
 	if(zscore == 1) {
@@ -1395,7 +1467,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		x3 = (float)(time_cat.od + 1)/(total_nf + 3);	
 	}
 	
-	else if(tim == 'd') {
+	else if(tim == 'm') {
 		
 		x3_f = (float)(time_cat.df + 1)/(counts[1] + 3);
 		x3 = (float)(time_cat.d + 1)/(total_nf + 3);
