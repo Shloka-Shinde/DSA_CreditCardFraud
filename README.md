@@ -24,3 +24,15 @@ Monitor the time intervals between consecutive transactions. Flag any transactio
 2. Z-Score Calculation: Flags transactions significantly deviating from a user’s average spending.
 3. Time Interval Analysis: Detects rapid consecutive transactions, which could indicate suspicious activity.
 4. Location Anomaly Check: Flags geographically inconsistent transactions in short time intervals.
+
+## References used : 
+* [Krish Naik's Naive Bayes Tutorial](https://www.youtube.com/watch?v=7zpEuCTcdKk&t=721s)
+* [A Credit card fraud detection using Naïve Bayes and Adaboost Research Paper](https://www.ijser.org/researchpaper/A-Credit-card-fraud-detection-using-Naive-Bayes-and-Adaboost.pdf)
+* [Naïve Bayes classifiers - Article by IBM](https://www.ibm.com/topics/naive-bayes)
+
+## Datasets Employed
+* [Generating Credit Card Details for users](https://www.akto.io/tools/credit-card-generator)
+* [Password Generator](https://www.akto.io/tools/password-generator)
+* [Daily Transaction Dataset from Kaggle](https://www.kaggle.com/datasets/prasad22/daily-transactions-dataset)
+* [Generate Credit Card Transaction Data](https://github.com/namebrandon/Sparkov_Data_Generation)
+
