@@ -1507,13 +1507,16 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	P(Fraud∣Features)>P(Non−Fraud∣Features).
 	*/
 	
-	if (pnf > pf) {
-		printf("non fraud\n");
-	} else {
-		printf("fraud\n");
-	}
+	printf(CYAN"\nFraud Status: ");
 	
-	printf("%.2f %.2f", pnf, pf);
+	if (pnf > pf) {
+		printf(GREEN"Non-Fraudulent\n");
+		printf("Probability (Non-Fraud): %.2f%% \nProbability (Fraud): %.2f%% ", pnf*100, pf*100);
+		
+	} else {
+		printf(RED"Fraudulent\n");
+		printf("Probability (Non-Fraud): %.2f%% \nProbability (Fraud): %.2f%%", pnf*100, pf*100);
+	}
 	
 	return;
 }

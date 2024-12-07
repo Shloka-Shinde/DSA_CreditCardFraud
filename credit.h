@@ -137,10 +137,6 @@ typedef struct Map {
 	
 }Map;
 
-/* Step 1. Initialize the Hashmap - enter the multiple users and keep the dll, tree node, etc NULL.
-* Step 2. Reading the file ; 
-*/
-
 char *getLine(FILE **fp); 
 
 Map *initHashMap();
@@ -150,6 +146,8 @@ int hashfunction(long int card_no);
 void enter_users(Map *h, user a);
 
 void readUsersData(Map *map, FILE **fp); 
+
+item *find(Map *map, long int no);
 
 char* checkPass(char *input); 
 
@@ -163,15 +161,11 @@ void insertEnd(dll* list, node* newNode);
 
 void readCsv(dll *list, FILE **fp); 
 
-void display(dll list); 
-
 node *copyList(dll list); 
 
 node* findMiddle(node *head); 
 
 transaction *sortedToBST(node *head); 
-
-void traversal(transaction *root); 
 
 float calculateMean(dll *list); 
 
@@ -181,17 +175,23 @@ void printMenu();
 
 int getInput(int num, dll list, item *endUser);
 
+void drawLineGraph(SDL_Renderer *renderer, dll list);
+
+void drawAxis(SDL_Renderer *renderer);
+
+void display_graph(item *endUser);
+
 void printRecent(dll list);
 
 void RecentToLast(dll list); 
 
 void oldTonew(dll list); 
 
+int compareDate(date d1, date d2);
+
 int is_odd_hour(struct tm time); 
 
 int multiple_failed_transactions(node *temp); 
-
-int compareDate(date d1, date d2);
 
 void find_transactions_by_date(transaction *root, date target_date);
 
@@ -205,32 +205,10 @@ int is_location_anomaly(location current, location last, location home);
 
 void fraudAlert(dll list, item *endUser); 
 
-char timeOfDay(struct tm t);
+int *flag(item *endUser);
+
+void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *time_cat, countStatus *st_cat);
 
 void TrainModel(item *endUser, char *country, struct tm t, float at, char status, countTime time_cat, countAmt amt_cat, countLoc loc_cat, countStatus st_cat, int *counts);
 
 void detectFraud(item *endUser);
-
-void display_graph(item *endUser);
-
-void drawYAxisLabels(SDL_Renderer *renderer, float minAmount, float maxAmount);
-
-void countAmtUpdate(countAmt *amt_cat, float z, int isFraud);
-
-void countLocUpdate(countLoc *loc_cat, char locFlag, int isFraud);
-
-void countTimeUpdate(countTime *time_cat, char timeFlag, int isFraud);
-
-void countStatusUpdate(countStatus *st_cat, char status, int isFraud);
-
-void processTransaction(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *time_cat, countStatus *st_cat);
-
-float computeProbability(countAmt amt_cat, countLoc loc_cat, countTime time_cat, countStatus st_cat, float z, char locFlag, char timeFlag, char status);
-
-void FindFrequency(item *endUser, countTime *time, countAmt* amt, countStatus *st_cat);
-
-float MeanAmt(node *head);
-
-float dev(node *head, float mean);
-
-item *find(Map *map, long int no);
