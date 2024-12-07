@@ -1,17 +1,16 @@
 # **Credit Card Fraud Detection System**
 
 **Project Synopsis:** Credit card fraud is a significant problem in the financial industry, resulting in billions of dollars in losses annually. Traditional fraud detection systems often rely on manual reviews and simple rule-based systems, which can be time-consuming and ineffective. This project aims to develop a more efficient and accurate system using advanced data structures and algorithms
-The project will focus on developing a robust and efficient system that can analyze large datasets of credit card transactions and detect fraudulent activities. The system will utilize a combination of data structures, including arrays, linked lists, and trees, to store and process transaction data.
+The project will focus on developing a robust and efficient system that can analyze datasets of credit card transactions and detect fraudulent activities. The system will utilize a combination of data structures, including hashmap,doubly linked lists, and binary search trees, to store and process transaction data.
 
 **Data Structures Employed:**
-- Hash-map: Used to store statistical data such as mean, standard deviation, and variance, and to maintain references to linked lists and BST nodes.
-- Binary Search Tree (BST): Employed for efficient storage and retrieval of transaction amounts and statuses, allowing for quick look up and analysis of spending patterns.
+- Hash-map: Used to store statistical data such as mean, standard deviation and to maintain references to linked lists and BST nodes for multiple users.
+- Binary Search Tree (BST): Employed for efficient storage and retrieval of transaction amounts and statuses, allowing for quick look up based on dates.
 - Linked List: Utilised to track transactions based on timestamp and location, supporting chronological ordering and traversal of transaction history.
 
 **Data Flow and Integration:**
-At program execution, a CSV file containing user details and transaction history is provided as input.
-The data is parsed and stored in the appropriate data structures: hash-maps for storing user
-statistics, linked lists for details.
+At program execution, user enters his/her credit card number and password, and after the login is successful, transaction data is loaded into data structures. 
+A menu driven program to search for transaction (based on date and location), showing flagged transactions and predicting the possibility for fraud.
 
 **Fraud Detection:**
 - if multiple failed transaction occur in a short span of time, they are a sign of potential fraud and will be flagged as the same.
