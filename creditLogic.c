@@ -1266,18 +1266,58 @@ void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *ti
 	
 }
 
+/*
+    Function: TrainModel
+    Purpose: Implements a Naive Bayes classifier to predict whether a credit card transaction is fraudulent or non-fraudulent based on multiple features.
+    
+    Parameters:
+        - item *endUser: Pointer to user-specific transaction statistics (mean, standard deviation).
+        - char *country: The country where the transaction occurred.
+        - struct tm t: The timestamp of the transaction, used to categorize time.
+        - float at: The amount of the transaction.
+        - char status: The transaction status ('s' for successful, others for failed).
+        - countTime time_cat: Struct holding counts for time categories (morning, evening, odd-hours).
+        - countAmt amt_cat: Struct holding counts for Z-score categories (low, moderate, high).
+        - countLoc loc_cat: Struct holding counts for location categories (domestic(India), international).
+        - countStatus st_cat: Struct holding counts for status categories (success, failure).
+        - int *counts: Array where counts[0] is the total number of transactions and counts[1] is the total number of fraudulent transactions.
+    
+    Returns:
+        - Prints whether the transaction is "fraud" or "non fraud" and the probabilities of each.
+    */
+
+	/*The Naive Bayes classifier is based on Bayes’ Theorem:
+	P(A∣B)=  (P(B∣A)⋅P(A))/ P(B)
+
+	A: The class (Fraud or Non-Fraud).
+	B: The observed features (Amount, Location, Time, Status). 
+	
+         P(Fraud|Features) ∝ P(Fraud) * P(Feature_1|Fraud) * P(Feature_2|Fraud) * ...
+         Here, Features include Z-score (transaction amount), location, time of transaction, and transaction status.
+*/	
 
 void TrainModel(item *endUser, char *country, struct tm t, float at, char status, countTime time_cat, countAmt amt_cat, countLoc loc_cat, countStatus st_cat, int *counts) {
 
+	// Step 1: Calculate the Z-score to determine how unusual the transaction amount is.
+	
 	float zscore = (at - endUser->mean)/(endUser->stdDev);
 	char c;
 	char tim;
 	
+	// Compute the probability of non-fraudulent (pnf) and fraudulent (pf) transactions:
+    	// `y` = P(Fraud), `x` = P(Non-Fraud).
+    	
+    	
+    	// y = P(Fraud) = Total fraudulent transactions / Total transactions
 	float y = (float)counts[1]/counts[0]; 
-	float x = 1 - y; //probability of non fraud transaction
+	
+	//probability of non fraud transaction // x = P(Non-Fraud) = 1 - P(Fraud)
+	float x = 1 - y; 
 	int total_nf = counts[0] - counts[1];
 	
 	// x1
+	// Step 2: Categorize the Z-score into three levels based on thresholds (low, moderate, high deviation).
+
 	if(fabs(zscore) <= 1.5) {
 		zscore = 1;	
 	}
@@ -1289,6 +1329,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	}
 	
 	// x2
+	// Step 3: Categorize the location as domestic or international.
 	if(strcmp(country, "India") == 0) {
 		c = 'i';
 	}
@@ -1297,6 +1338,7 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	}
 	
 	//x3
+	
 	if(t.tm_hour < 6 || t.tm_hour > 22) {
 		tim = 'o';
 	}
@@ -1304,32 +1346,35 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		tim = 'd';
 	}
 	else {
-		tim = 'n';
+		tim = 'e';
 	}
 	
+	// Initialize conditional probabilities for each feature
 	float x1, x2, x3, x4;
 	float x1_f, x2_f, x3_f, x4_f;	
 	float pnf, pf;
 	
+	//Laplace smoothing is applied to avoid zero probabilities.
+	// Step 5: Calculate conditional probabilities for Z-score (amount deviation).
+	
 	if(zscore == 1) {
-		
 		x1_f = (float)(amt_cat.z1f + 1)/(counts[1] + 3);
 		x1 = (float)(amt_cat.z1 + 1)/(total_nf + 3);
 	}
 	
 	else if(zscore == 2) {
-		
 		x1_f = (float)(amt_cat.z2f + 1)/(counts[1] + 3);
 		x1 = (float)(amt_cat.z2 + 1)/(total_nf + 3);
 	}
 	
 	else {
-		
 		x1_f = (float)(amt_cat.z3f + 1)/(counts[1] + 3);
 		x1 = (float)(amt_cat.z3 + 1)/(total_nf + 3);
 	}
 	
 	//x2: 
+	// Step 6: Calculate conditional probabilities for location.
+	
 	if(c == 'i') {
 		x2_f = (float)(loc_cat.fin + 1)/(counts[1] + 2);
 		x2 = (float)(loc_cat.in + 1)/(total_nf + 2);
@@ -1342,6 +1387,8 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	}
 	
 	//x3 
+	// Step 7: Calculate conditional probabilities for time.
+	
 	if(tim == 'o') {
 		
 		x3_f = (float)(time_cat.odf + 1)/(counts[1] + 3);
@@ -1360,6 +1407,8 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	}
 	
 	//x4 
+	// Step 8: Calculate conditional probabilities for transaction status.
+	
 	if(status == 's' || status == 'S') {
 		x4_f = (float)(st_cat.sf + 1)/(counts[1] + 2);
 		x4 = (float)(st_cat.s + 1)/(total_nf + 2);
@@ -1370,11 +1419,21 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 		x4 = (float)(st_cat.f + 1)/(total_nf + 2); 
 	}
 	
+	// Step 9: Calculate posterior probabilities for fraud (pf) and non-fraud (pnf).
+	
 	pnf = x * x1 * x2 * x3 * x4;
 	pf = y * x1_f * x2_f * x3_f * x4_f;
+	
+	
+	// Normalize the probabilities (to ensure their sum equals 1).
 	float p = pnf + pf;
 	pnf = pnf / p;
 	pf = pf / p;
+	
+	// Step 10: Classification decision based on probabilities.
+	/*Decision Rule: The transaction is classified as fraudulent if 
+	P(Fraud∣Features)>P(Non−Fraud∣Features).
+	*/
 	
 	if (pnf > pf) {
 		printf("non fraud\n");
