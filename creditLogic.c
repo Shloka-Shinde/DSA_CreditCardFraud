@@ -346,7 +346,7 @@ node* createNode(char *id, date payment_date, struct tm payment_time, location p
     newNode->date_of_payment = payment_date;
     newNode->time_of_payment = payment_time;
     newNode->payment_place = payment_place;
-    newNode->zipCode[0] = zip_code;
+    newNode->zipCode = zip_code;
     newNode->amount = amount;
     newNode->status = status;
     newNode->prev = NULL;
@@ -451,7 +451,7 @@ node *copyList(dll list) {
 		new->transaction_id[0] = temp->transaction_id[0];
 		new->time_of_payment = temp->time_of_payment;
 		new->payment_place = temp->payment_place;
-		new->zipCode[0] = temp->zipCode[0];
+		new->zipCode = temp->zipCode;
 		new->amount = temp->amount;
 		new->status = temp->status;
 		new->date_of_payment = temp->date_of_payment;

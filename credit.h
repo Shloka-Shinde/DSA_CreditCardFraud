@@ -76,11 +76,11 @@ typedef struct location {
 
 typedef struct node {
 
-	char transaction_id[36];
+	char transaction_id[40];
 	date date_of_payment;
 	struct tm time_of_payment;
 	location payment_place;
-	int zipCode[10];
+	int zipCode;
 	float amount;
 	char status; 
 	int fraud;
@@ -122,7 +122,6 @@ typedef struct item {
 
 	user client;
 	float stdDev;
-	float variance;
 	float mean;
 	dll list;
 	transaction *root;
