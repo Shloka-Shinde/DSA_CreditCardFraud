@@ -1111,6 +1111,9 @@ void TrainModel(item *endUser, char *country, struct tm t, float at, char status
 	float pnf, pf;
 
 	//Laplace smoothing is applied to avoid zero probabilities.
+	/* Laplace smoothing prevents zero probabilities by adding 1 to feature category counts. 
+ 	This ensures no category is excluded,
+ 	avoiding a zero posterior probability that would make classification impossible. */
 
 	  // Step 5: Calculate conditional probabilities for Z-score (amount deviation).
 	if(zscore == 1) {
