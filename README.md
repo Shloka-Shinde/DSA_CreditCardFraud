@@ -3,7 +3,7 @@
 ## Demo
 Click on the thumbnail and download the video to watch it! 
 
-[![Watch the Demo](./thumbnail.png)](./demo_video.mp4)
+[![Watch the Demo](./thumbnail.png)](https://drive.google.com/file/d/1Bz96EZAZApKEosIOU77iWCxlKNNbMf5Y/view?usp=sharing)
 
 
 **Project Synopsis:** Credit card fraud is a significant problem in the financial industry, resulting in billions of dollars in losses annually. Traditional fraud detection systems often rely on manual reviews and simple rule-based systems, which can be time-consuming and ineffective. This project aims to develop a more efficient and accurate system using advanced data structures and algorithms
