@@ -1,6 +1,7 @@
 # **Credit Card Fraud Detection System**
 
 ## Demo
+Click on the thumbnail and download the video to watch it! 
 
 [![Watch the Demo](./thumbnail.png)](./demo_video.mp4)
 
