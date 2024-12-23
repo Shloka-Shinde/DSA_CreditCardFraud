@@ -20,7 +20,7 @@ int main() {
 	
 		long int no;
 		int i = 0;
-		char pass[20], ch, num[16], *endptr;
+		char pass[20], ch, num[17], *endptr;
 		
 		
 		printf(YELLOW "ENter card no. \n");
@@ -28,9 +28,9 @@ int main() {
 		while((ch = getchar()) != '\n') {
 			num[i++] = ch;
 		}
+		
 		num[i] = '\0';
 		i = 0;
-		
 		
 		no = strtol(num, &endptr, 16);
 		 
@@ -48,21 +48,24 @@ int main() {
 		    
 		    printf(CYAN "Login successful.\n");
 		    
-		    item *endUser = m->array[hashfunction(no)];
+		    item *endUser = find(m, no);
+		    printf(YELLOW"\nName : %s\n",endUser->client.name);
+		    printf(YELLOW"\nCard No: %s\n",num);
+		    printf(YELLOW"\nCVV : %d\n",endUser->client.cvv);
 		    
-		    //char *fileName = (char*)malloc(sizeof(char)*20);
-		    //strcpy(fileName, endUser->client.name);
+		    char *fileName = (char*)malloc(sizeof(char)*20);
+		    strcpy(fileName, endUser->client.name);
 		    
-		    //strcat(fileName, ".csv");
+		    strcat(fileName, ".csv");
 		    
-		    fp = fopen("real.csv", "r");
+		    fp = fopen(fileName, "r");
 		    
 		    if(fp == NULL) {
 		    	printf(RED "There was some error in loading the data \n");
 		    }
 		    
 		    else { 
-		    
+		    	
 		    	init_dll(&(endUser->list));
 		    	readCsv(&(endUser->list), &fp);
 		    	
@@ -85,12 +88,22 @@ int main() {
 				}
 		    	
 		    	}
-		    	struct tm t;
+		    	/*struct tm t;
 		    	t.tm_hour = 12;
 		    	t.tm_min = 13;
 		    	t.tm_sec = 1;
 		    	
-		    	TrainModel(endUser, "India", t, 140000, 's');
+		    	TrainModel(endUser, "India", t, 40000, 's');
+		    	TrainModel(endUser, "India", t, 130300, 'f');
+		    	TrainModel(endUser, "Usa", t, 800, 's');
+		    	TrainModel(endUser, "India", t, 7857, 's');
+		    	
+		    	t.tm_hour = 23;
+		    	t.tm_min = 23;
+		    	t.tm_sec = 23;
+		    	
+		    	
+		    	TrainModel(endUser, "India", t, 34000, 's');*/
 		   	//detectFraud(endUser);
 		   }
 		

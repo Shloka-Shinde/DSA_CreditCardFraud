@@ -6,13 +6,16 @@
 * Initializing the linked list and the bst.  
 * Functions : 
 */
-
-#define MAPSIZE 53
+#include <SDL2/SDL.h>  // Ensure SDL2 is included here for SDL_Renderer
+#include <SDL2/SDL_ttf.h>
+#define MAPSIZE 11
 #define RESET "\033[0m"
 #define RED "\033[31m"
 #define GREEN "\033[32m"
 #define YELLOW "\033[33m"
 #define CYAN "\033[36m"
+#define WIDTH 800
+#define HEIGHT 600
 #define epsilon 1e-6
 
 typedef struct countLoc{
@@ -73,11 +76,11 @@ typedef struct location {
 
 typedef struct node {
 
-	int transaction_id[12];
+	char transaction_id[40];
 	date date_of_payment;
 	struct tm time_of_payment;
 	location payment_place;
-	int zipCode[10];
+	int zipCode;
 	float amount;
 	char status; 
 	int fraud;
@@ -119,7 +122,6 @@ typedef struct item {
 
 	user client;
 	float stdDev;
-	float variance;
 	float mean;
 	dll list;
 	transaction *root;
@@ -135,10 +137,6 @@ typedef struct Map {
 	
 }Map;
 
-/* Step 1. Initialize the Hashmap - enter the multiple users and keep the dll, tree node, etc NULL.
-* Step 2. Reading the file ; 
-*/
-
 char *getLine(FILE **fp); 
 
 Map *initHashMap();
@@ -149,27 +147,25 @@ void enter_users(Map *h, user a);
 
 void readUsersData(Map *map, FILE **fp); 
 
+item *find(Map *map, long int no);
+
 char* checkPass(char *input); 
 
 int checkUser(Map *map, long int no, char *pass);
 
 void init_dll(dll *list);
 
-node* createNode(int transaction_id, date payment_date, struct tm payment_time, location payment_place, int zip_code, float amount, char status); 
+node* createNode(char *id, date payment_date, struct tm payment_time, location payment_place, int zip_code, float amount, char status);
 
 void insertEnd(dll* list, node* newNode);
 
 void readCsv(dll *list, FILE **fp); 
-
-void display(dll list); 
 
 node *copyList(dll list); 
 
 node* findMiddle(node *head); 
 
 transaction *sortedToBST(node *head); 
-
-void traversal(transaction *root); 
 
 float calculateMean(dll *list); 
 
@@ -179,19 +175,30 @@ void printMenu();
 
 int getInput(int num, dll list, item *endUser);
 
+void drawLineGraph(SDL_Renderer *renderer, dll list);
+
+//void drawAxis(SDL_Renderer *renderer);
+void drawAxis(SDL_Renderer *renderer,  TTF_Font *font);
+
+void display_graph(item *endUser);
+
 void printRecent(dll list);
 
 void RecentToLast(dll list); 
 
 void oldTonew(dll list); 
 
+int compareDate(date d1, date d2);
+
 int is_odd_hour(struct tm time); 
 
 int multiple_failed_transactions(node *temp); 
 
-int compareDate(date d1, date d2);
+void renderText(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x, int y);
 
-void find_transactions_by_date(transaction *root, date target_date);
+void find_transactions_by_date(transaction *root, date target_date, int *count);
+
+void find_transactions_byLocation(dll list, location place);
 
 int is_small_time_frame(struct tm last_time, struct tm current_time); 
 
@@ -201,8 +208,10 @@ int is_location_anomaly(location current, location last, location home);
 
 void fraudAlert(dll list, item *endUser); 
 
-char timeOfDay(struct tm t);
+int *flag(item *endUser);
 
-void TrainModel(item *endUser, char *country, struct tm t, float at, char status);
+void findFreq(item *endUser, countAmt *amt_cat, countLoc *loc_cat, countTime *time_cat, countStatus *st_cat);
+
+void TrainModel(item *endUser, char *country, struct tm t, float at, char status, countTime time_cat, countAmt amt_cat, countLoc loc_cat, countStatus st_cat, int *counts);
 
 void detectFraud(item *endUser);

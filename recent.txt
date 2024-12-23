@@ -1,3 +1,0 @@
-amount location time(hh:mm:ss) status
-140000 India 12:32:00 Successful
-
