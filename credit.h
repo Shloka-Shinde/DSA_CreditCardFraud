@@ -177,7 +177,8 @@ int getInput(int num, dll list, item *endUser);
 
 void drawLineGraph(SDL_Renderer *renderer, dll list);
 
-void drawAxis(SDL_Renderer *renderer);
+//void drawAxis(SDL_Renderer *renderer);
+void drawAxis(SDL_Renderer *renderer,  TTF_Font *font);
 
 void display_graph(item *endUser);
 
@@ -192,6 +193,8 @@ int compareDate(date d1, date d2);
 int is_odd_hour(struct tm time); 
 
 int multiple_failed_transactions(node *temp); 
+
+void renderText(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x, int y);
 
 void find_transactions_by_date(transaction *root, date target_date, int *count);
 

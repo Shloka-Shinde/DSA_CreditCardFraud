@@ -7,7 +7,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-
 /*The function reads one character at a time until it encounters a newline or EOF. If the line has nn characters,
 *  the reading process will take O(n).
 */
@@ -670,7 +669,7 @@ int getInput(int num, dll list, item *endUser) {
 }
 
 
-void drawLineGraph(SDL_Renderer *renderer, dll list) {
+/*void drawLineGraph(SDL_Renderer *renderer, dll list) {
     
     if (list.head == NULL) {
         return; // No data to display
@@ -714,18 +713,75 @@ void drawLineGraph(SDL_Renderer *renderer, dll list) {
         count++;
         temp = temp->next;
     }
+}*/
+void drawLineGraph(SDL_Renderer *renderer, dll list) {
+    
+    if (list.head == NULL) {
+        return; // No data to display
+    }
+    
+    // Calculate min and max values of the amount to scale them appropriately
+    float minAmount = list.head->amount;
+    float maxAmount = list.head->amount;
+    node* temp = list.head;
+    
+    while (temp != NULL) {
+        if (temp->amount < minAmount) minAmount = temp->amount;
+        if (temp->amount > maxAmount) maxAmount = temp->amount;
+        temp = temp->next;
+    }
+    // Scaling factors
+    //float yScale = (maxAmount - minAmount) > 0 ? HEIGHT / (maxAmount - minAmount) : 1;
+    int prevX = 70, prevY = HEIGHT - 50;  // Starting point
+
+    temp = list.head;   
+    int count = 1;  // Start from 1, adjusting for proper X spacing
+
+    while (temp != NULL) {
+        // Map the amount to a Y coordinate (invert Y-axis for SDL)
+        int currX = 50 + count * 50; // Adjust X spacing (increase/decrease if needed)
+        int currY = HEIGHT - temp->amount ;  // Map the amount to screen space (invert Y)
+
+        // Ensure the current Y is within the height bounds
+        if (currY > HEIGHT) currY = HEIGHT;
+        if (currY < 0) currY = 0;	
+
+        // Draw a line between the previous and current point
+        SDL_SetRenderDrawColor(renderer, 0, 128, 255, 255);  // Blue color for the curve
+        SDL_RenderDrawLine(renderer, prevX, prevY, currX, currY);
+
+        // Set previous coordinates for the next iteration
+        prevX = currX;
+        prevY = currY;
+
+        count++;
+        temp = temp->next;
+    }
 }
 
-void drawAxis(SDL_Renderer *renderer) {
+
+/*void drawAxis(SDL_Renderer *renderer) {
    
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // Black color
     // Draw X axis
     SDL_RenderDrawLine(renderer, 50, HEIGHT - 50, WIDTH - 50, HEIGHT - 50);
     // Draw Y axis
     SDL_RenderDrawLine(renderer, 50, HEIGHT - 50, 50, 50);
+}*/
+
+void drawAxis(SDL_Renderer *renderer,  TTF_Font *font) {
+   
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // Black color
+    // Draw X axis
+    SDL_RenderDrawLine(renderer, 70, HEIGHT - 50, WIDTH - 50, HEIGHT - 50);
+    // Draw Y axis
+    SDL_RenderDrawLine(renderer, 70, HEIGHT - 50, 70, 50);
+
+	renderText(renderer, font, "DATE", WIDTH - 80, HEIGHT - 40);  // X-axis label
+    renderText(renderer, font, "AMOUNT", 10, 50); 
 }
 
-void display_graph(item *endUser) {
+/*void display_graph(item *endUser) {
 
     // Initialize SDL
     SDL_Init(SDL_INIT_VIDEO);
@@ -763,7 +819,64 @@ void display_graph(item *endUser) {
     SDL_DestroyWindow(window);
     SDL_Quit();
 
+}*/
+
+void display_graph(item *endUser) {
+
+    // Initialize SDL
+    SDL_Init(SDL_INIT_VIDEO);
+	TTF_Init();
+    // Create the window and renderer
+    SDL_Window *window = SDL_CreateWindow("Transaction Line Graph", 
+                                          SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+                                          WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    
+    int running = 1;
+    SDL_Event event;
+	TTF_Font *font = TTF_OpenFont("Square.ttf", 16);
+	if (!font) {
+    	printf("Failed to load font: %s\n", TTF_GetError());
+    	return;
+	}
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = 0;
+            }
+    }
+    
+     // Clear the renderer and set the background color
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);  // White background
+        SDL_RenderClear(renderer);
+
+        // Draw the axis and the line graph
+        drawAxis(renderer, font);
+        drawLineGraph(renderer, endUser->list);  // Draw the line graph
+
+        // Present the rendered content
+        SDL_RenderPresent(renderer);
+    }
+
+    // Cleanup
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+	TTF_CloseFont(font);
+	TTF_Quit();
 }
+
+
+void renderText(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x, int y) {
+    SDL_Color color = {0, 0, 0, 255};  // Black text color
+    SDL_Surface *surface = TTF_RenderText_Blended(font, text, color);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_Rect dstRect = {x, y, surface->w, surface->h};
+    SDL_RenderCopy(renderer, texture, NULL, &dstRect);
+    SDL_FreeSurface(surface);
+    SDL_DestroyTexture(texture);
+}
+        
 
 void printRecent(dll list) {
 	
