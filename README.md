@@ -41,3 +41,7 @@ Monitor the time intervals between consecutive transactions. Flag any transactio
 * [Daily Transaction Dataset from Kaggle](https://www.kaggle.com/datasets/prasad22/daily-transactions-dataset)
 * [Generate Credit Card Transaction Data](https://github.com/namebrandon/Sparkov_Data_Generation)
 
+## Contributors 
+- [@Shloka-Shinde](https://github.com/Shloka-Shinde)
+- [@vaish-navi24](https://github.com/vaish-navi24)
+- [@Sanket-Sonawane-cpp](https://github.com/Sanket-Sonawane-cpp)
